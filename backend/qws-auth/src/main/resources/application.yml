@@ -1,0 +1,28 @@
+server:
+  port: 8090
+spring:
+  application:
+    name: qws-auth
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: QWS
+        group: QWS_GROUP
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/7wsys?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: root
+    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+jwt:
+  secret: qws-platform-secret-key-for-jwt-demo-2026

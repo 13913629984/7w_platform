@@ -1,0 +1,53 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: qws-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: QWS
+        group: QWS_GROUP
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: '*'
+            allowedMethods: '*'
+            allowedHeaders: '*'
+            allowCredentials: true
+      routes:
+        - id: qws-auth
+          uri: lb://qws-auth
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+        - id: qws-system
+          uri: lb://qws-system
+          predicates:
+            - Path=/system/**
+        - id: qws-system-api
+          uri: lb://qws-system
+          predicates:
+            - Path=/api/system/**
+          filters:
+            - StripPrefix=1
+        - id: qws-crm
+          uri: lb://qws-crm
+          predicates:
+            - Path=/api/crm/**
+          filters:
+            - StripPrefix=1
+        - id: qws-wms
+          uri: lb://qws-wms
+          predicates:
+            - Path=/api/wms/**
+          filters:
+            - StripPrefix=1
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

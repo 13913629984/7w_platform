@@ -1,0 +1,39 @@
+# Maven build output
+**/target/
+
+# Node modules and frontend build output
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE/editor files
+.vscode/
+*.iml
+.idea/
+.m2/
+.claude/
+
+# Logs and local environment files
+logs/
+*.log
+*.tmp
+*.temp
+*.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Nacos / local service files
+*.local
+
+# JetBrains caches
+out/
+
+# Generated files
+**/generated-sources/
+**/mvnw*
+
+# VS Code workspace storage
+.vscode-server/
