@@ -109,47 +109,51 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import {
+  listBudgets,
+  budgetStats,
+  budgetCharts,
+  type Budget,
+  type BudgetChartItem,
+  type BudgetCompareItem,
+} from '@/api/fin/budget'
 
 const month = ref('5月')
 const year = ref('2026年')
 const monthOptions = ['1月', '2月', '3月', '4月', '5月', '6月']
 const yearOptions = ['2026年', '2025年', '2024年']
 
-const statCards = [
-  { label: '年度预算总额', value: '¥2,680万', trend: '执行率 52.3%', trendType: 'up', color: 'green', icon: '💰' },
-  { label: '已执行预算', value: '¥1,402万', trend: '进度正常', trendType: '', color: 'blue', icon: '📈' },
-  { label: '预算余额', value: '¥1,278万', trend: '剩余 47.7%', trendType: '', color: 'orange', icon: '💳' },
-  { label: '超预算预警', value: '2', trend: '需关注', trendType: 'down', color: 'red', icon: '⚠️' },
-]
+const stats = ref({ total: 0, executed: 0, balance: 0, rate: 0, overBudget: 0 })
+const progressData = ref<BudgetChartItem[]>([])
+const compareData = ref<BudgetCompareItem[]>([])
+const budgets = ref<Budget[]>([])
 
-// 各部门预算执行进度 (单位: 万)
-const progressData = [
-  { name: '销售部', executed: 58.6, remain: 61.4 },
-  { name: '研发部', executed: 168.5, remain: 211.5 },
-  { name: '生产部', executed: 856.2, remain: 343.8 },
-  { name: '管理部', executed: 198.6, remain: 81.4 },
-  { name: '采购部', executed: 320.5, remain: 379.5 },
-]
+const statCards = computed(() => [
+  { label: '年度预算总额', value: formatWanRaw(stats.value.total), trend: `执行率 ${stats.value.rate}%`, trendType: 'up', color: 'green', icon: '💰' },
+  { label: '已执行预算', value: formatWanRaw(stats.value.executed), trend: '进度正常', trendType: '', color: 'blue', icon: '📈' },
+  { label: '预算余额', value: formatWanRaw(stats.value.balance), trend: `剩余 ${(100 - Number(stats.value.rate)).toFixed(1)}%`, trendType: '', color: 'orange', icon: '💳' },
+  { label: '超预算预警', value: String(stats.value.overBudget), trend: '需关注', trendType: 'down', color: 'red', icon: '⚠️' },
+])
 
-// 预算 vs 实际支出 (单位: 万)
-const compareData = [
-  { name: '销售', budget: 20, actual: 18 },
-  { name: '研发', budget: 62, actual: 56 },
-  { name: '生产', budget: 200, actual: 185 },
-  { name: '管理', budget: 47, actual: 44 },
-  { name: '采购', budget: 115, actual: 100 },
-  { name: '财务', budget: 9, actual: 7 },
-]
+async function loadAll() {
+  try {
+    const [list, st, charts] = await Promise.all([listBudgets(), budgetStats(), budgetCharts()])
+    budgets.value = list
+    stats.value = st
+    progressData.value = charts.progress
+    compareData.value = charts.compare
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
 
-const budgets = [
-  { dept: '销售部', item: '销售费用预算', budget: 120, executed: 58.6, rate: 48.8 },
-  { dept: '研发部', item: '研发费用预算', budget: 380, executed: 168.5, rate: 44.3 },
-  { dept: '生产部', item: '生产成本预算', budget: 1200, executed: 856.2, rate: 71.4 },
-  { dept: '管理部', item: '管理费用预算', budget: 280, executed: 198.6, rate: 70.9 },
-  { dept: '采购部', item: '采购成本预算', budget: 700, executed: 320.5, rate: 45.8 },
-]
+onMounted(loadAll)
+
+function formatWanRaw(value: number) {
+  return `¥${Number(value || 0).toLocaleString()}万`
+}
 
 function buildGroupedChart<T extends { name: string }>(
   items: T[],
@@ -202,7 +206,7 @@ function roundUpNice(v: number) {
 }
 
 const progress = computed(() => {
-  const c = buildGroupedChart(progressData, [(d) => d.executed, (d) => d.remain], (v) => `${Math.round(v)}万`)
+  const c = buildGroupedChart(progressData.value, [(d) => d.executed, (d) => d.remain], (v) => `${Math.round(v)}万`)
   const groups = c.groups.map((g) => ({
     name: g.d.name,
     labelX: g.center,
@@ -217,7 +221,7 @@ const progress = computed(() => {
 })
 
 const compare = computed(() => {
-  const c = buildGroupedChart(compareData, [(d) => d.budget, (d) => d.actual], (v) => `${Math.round(v)}万`)
+  const c = buildGroupedChart(compareData.value, [(d) => d.budget, (d) => d.actual], (v) => `${Math.round(v)}万`)
   const groups = c.groups.map((g) => ({
     name: g.d.name,
     labelX: g.center,

@@ -13,6 +13,7 @@
     <module>qws-system</module>
     <module>qws-crm</module>
     <module>qws-wms</module>
+    <module>qws-fin</module>
   </modules>
 
   <parent>

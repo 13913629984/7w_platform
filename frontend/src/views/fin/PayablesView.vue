@@ -90,7 +90,7 @@
           <template #default="{ row }">
             <el-button link type="primary">详情</el-button>
             <el-button v-if="row.status === '待付款' && row.matched" link type="primary">创建付款</el-button>
-            <el-button v-if="!row.matched" link type="primary">上传发票</el-button>
+            <el-button v-if="!row.matched" link type="primary" @click="handleMatch(row)">上传发票</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -109,43 +109,56 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import {
+  listPayables,
+  listPendingReceipts,
+  payableStats,
+  matchPayable,
+  type Payable,
+  type PendingReceipt,
+} from '@/api/fin/payable'
 
 const keyword = ref('')
 const statusFilter = ref('')
 
-const statCards = [
-  { label: '应付账款总额', value: '¥108,254', trend: '4 笔单据', trendType: '', color: 'blue', icon: '📤' },
-  { label: '待匹配发票', value: '2', trend: '需上传发票', trendType: '', color: 'orange', icon: '🧾' },
-  { label: '已匹配发票', value: '2', trend: '可进行付款', trendType: '', color: 'green', icon: '✅' },
-  { label: '逾期应付', value: '1', trend: '需紧急处理', trendType: 'down', color: 'red', icon: '⚠️' },
-]
+const payables = ref<Payable[]>([])
+const pendingReceipts = ref<PendingReceipt[]>([])
+const stats = ref({ total: 0, count: 0, pendingMatch: 0, matched: 0, overdue: 0 })
 
-const pendingReceipts = [
-  { code: 'RK20260528001', purchaseOrder: 'PO20260527001', supplier: '深圳电子科技', amount: 4500, tax: 585, payable: 5085 },
-  { code: 'RK20260528002', purchaseOrder: 'PO20260528001', supplier: '东莞五金厂', amount: 3000, tax: 390, payable: 3390 },
-]
-
-const payables = [
-  { code: 'AP20260528001', receiptCode: 'RK20260527001', supplier: '上海芯片公司', purchaseAmount: 8500, tax: 1105, payable: 9605, matched: true, dueDate: '2026-06-10', status: '待付款' },
-  { code: 'AP20260527001', receiptCode: 'RK20260526001', supplier: '苏州原材料厂', purchaseAmount: 6500, tax: 845, payable: 7345, matched: false, dueDate: '2026-06-05', status: '待匹配' },
-  { code: 'AP20260526001', receiptCode: 'RK20260525001', supplier: '宁波塑胶有限公司', purchaseAmount: 35200, tax: 4576, payable: 39776, matched: true, dueDate: '2026-05-28', status: '已付款' },
-  { code: 'AP20260525001', receiptCode: 'RK20260524001', supplier: '深圳电子科技', purchaseAmount: 45600, tax: 5928, payable: 51528, matched: false, dueDate: '2026-06-02', status: '逾期' },
-]
+const statCards = computed(() => [
+  { label: '应付账款总额', value: formatMoney(stats.value.total), trend: `${stats.value.count} 笔单据`, trendType: '', color: 'blue', icon: '📤' },
+  { label: '待匹配发票', value: String(stats.value.pendingMatch), trend: '需上传发票', trendType: '', color: 'orange', icon: '🧾' },
+  { label: '已匹配发票', value: String(stats.value.matched), trend: '可进行付款', trendType: '', color: 'green', icon: '✅' },
+  { label: '逾期应付', value: String(stats.value.overdue), trend: '需紧急处理', trendType: 'down', color: 'red', icon: '⚠️' },
+])
 
 const statusOptions = ['待匹配', '待付款', '已付款', '逾期']
 
 const filteredPayables = computed(() =>
-  payables.filter((r) => {
+  payables.value.filter((r) => {
     const matchedKeyword = !keyword.value || r.supplier.includes(keyword.value) || r.code.includes(keyword.value)
     const matchedStatus = !statusFilter.value || r.status === statusFilter.value
     return matchedKeyword && matchedStatus
   }),
 )
 
+async function loadAll() {
+  try {
+    const [list, pending, st] = await Promise.all([listPayables(), listPendingReceipts(), payableStats()])
+    payables.value = list
+    pendingReceipts.value = pending
+    stats.value = st
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
+
+onMounted(loadAll)
+
 function formatMoney(value: number) {
-  return `¥${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return `¥${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 function statusTagType(status: string) {
@@ -156,23 +169,34 @@ function statusTagType(status: string) {
   return 'info'
 }
 
+async function handleMatch(row: Payable) {
+  try {
+    await matchPayable(row.id!)
+    ElMessage.success('发票匹配成功')
+    loadAll()
+  } catch (e: any) {
+    ElMessage.error(e.message || '操作失败')
+  }
+}
+
 function handleAutoGenerate() {
-  ElMessage.success('自动生成AP成功')
+  ElMessage.info('请在采购入库后自动生成AP')
 }
 function handleExport() {
   ElMessage.success('导出成功')
 }
 function handleRefresh() {
+  loadAll()
   ElMessage.success('已刷新')
 }
 function handleCreate() {
   ElMessage.info('新增应付款')
 }
 function handleBatchGenerate() {
-  ElMessage.success('批量生成AP成功')
+  ElMessage.info('批量生成AP')
 }
 function handleGenerateAp() {
-  ElMessage.success('生成AP成功')
+  ElMessage.info('生成AP')
 }
 </script>
 

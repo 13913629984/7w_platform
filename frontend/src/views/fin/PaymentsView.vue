@@ -74,8 +74,9 @@
         <el-table-column label="操作" min-width="140" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary">详情</el-button>
-            <el-button v-if="row.status === '已通过'" link type="primary">确认支付</el-button>
-            <el-button v-if="row.status === '待审批'" link type="primary">审批</el-button>
+            <el-button v-if="row.status === '已通过'" link type="primary" @click="handleApprove(row)">确认支付</el-button>
+            <el-button v-if="row.status === '待审批' || row.status === '审批中'" link type="primary" @click="handleApprove(row)">审批</el-button>
+            <el-button v-if="row.status === '待审批' || row.status === '审批中'" link type="danger" @click="handleReject(row)">驳回</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -132,39 +133,42 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import {
+  listPayments,
+  paymentStats,
+  createPayment,
+  approvePayment,
+  rejectPayment,
+  type Payment,
+} from '@/api/fin/payment'
 
 const keyword = ref('')
 const statusFilter = ref('')
 const createVisible = ref(false)
 
-const statCards = [
-  { label: '本月付款总额', value: '¥117,209', trend: '-8.5% 较上月', trendType: 'down', color: 'blue', icon: '💸' },
-  { label: '已付款', value: '1 笔', trend: '已完成支付', trendType: '', color: 'green', icon: '✅' },
-  { label: '待审批', value: '1 笔', trend: '等待审批', trendType: '', color: 'orange', icon: '⏳' },
-  { label: '已驳回', value: '1 笔', trend: '需重新提交', trendType: 'down', color: 'red', icon: '⛔' },
-]
+const payments = ref<Payment[]>([])
+const stats = ref({ monthTotal: 0, paid: 0, pendingApprove: 0, approving: 0, approved: 0, rejected: 0 })
 
-const flowSteps = [
-  { no: 1, title: '待审批', desc: '等待主管审批', count: 1, color: 'orange' },
-  { no: 2, title: '审批中', desc: '财务处理审核', count: 1, color: 'blue' },
-  { no: 3, title: '已通过', desc: '等待支付', count: 1, color: 'purple' },
-  { no: 4, title: '已付款', desc: '支付完成', count: 1, color: 'green' },
-]
+const statCards = computed(() => [
+  { label: '本月付款总额', value: formatMoney(stats.value.monthTotal), trend: '全部付款单', trendType: '', color: 'blue', icon: '💸' },
+  { label: '已付款', value: `${stats.value.paid} 笔`, trend: '已完成支付', trendType: '', color: 'green', icon: '✅' },
+  { label: '待审批', value: `${stats.value.pendingApprove} 笔`, trend: '等待审批', trendType: '', color: 'orange', icon: '⏳' },
+  { label: '已驳回', value: `${stats.value.rejected} 笔`, trend: '需重新提交', trendType: 'down', color: 'red', icon: '⛔' },
+])
 
-const payments = [
-  { code: 'PAY20260526001', type: '采购付款', apCode: 'AP20260526001', payee: '宁波CC塑胶', amount: 39776, method: '银行转账', applyDate: '2026-05-28 10:30:00', status: '已付款' },
-  { code: 'PAY20260528002', type: '采购付款', apCode: 'AP20260528001', payee: '上海芯片公司', amount: 9605, method: '银行转账', applyDate: '2026-05-28 09:15:00', status: '已通过' },
-  { code: 'PAY20260527001', type: '费用报销', apCode: '', payee: '张销售', amount: 3500, method: '支付宝', applyDate: '2026-05-27 14:00:00', status: '待审批' },
-  { code: 'PAY20260526002', type: '采购付款', apCode: 'AP20260525001', payee: '深圳电子科技', amount: 51528, method: '银行转账', applyDate: '2026-05-26 11:00:00', status: '审批中' },
-  { code: 'PAY20260525001', type: '费用报销', apCode: '', payee: '王研发', amount: 12800, method: '银行转账', applyDate: '2026-05-25 16:00:00', status: '已驳回' },
-]
+const flowSteps = computed(() => [
+  { no: 1, title: '待审批', desc: '等待主管审批', count: stats.value.pendingApprove, color: 'orange' },
+  { no: 2, title: '审批中', desc: '财务处理审核', count: stats.value.approving, color: 'blue' },
+  { no: 3, title: '已通过', desc: '等待支付', count: stats.value.approved, color: 'purple' },
+  { no: 4, title: '已付款', desc: '支付完成', count: stats.value.paid, color: 'green' },
+])
 
 const statusOptions = ['待审批', '审批中', '已通过', '已付款', '已驳回']
 
 const filteredPayments = computed(() =>
-  payments.filter((r) => {
+  payments.value.filter((r) => {
     const matchedKeyword = !keyword.value || r.payee.includes(keyword.value) || r.code.includes(keyword.value)
     const matchedStatus = !statusFilter.value || r.status === statusFilter.value
     return matchedKeyword && matchedStatus
@@ -174,15 +178,27 @@ const filteredPayments = computed(() =>
 const form = reactive({
   code: '',
   type: '采购付款',
-  apCode: 'AP20260528001',
+  apCode: '',
   payee: '',
   amount: 0,
   method: '银行转账',
   remark: '',
 })
 
+async function loadAll() {
+  try {
+    const [list, st] = await Promise.all([listPayments(), paymentStats()])
+    payments.value = list
+    stats.value = st
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
+
+onMounted(loadAll)
+
 function formatMoney(value: number) {
-  return `¥${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return `¥${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 function statusTagType(status: string) {
@@ -197,7 +213,7 @@ function statusTagType(status: string) {
 function openCreate() {
   form.code = ''
   form.type = '采购付款'
-  form.apCode = 'AP20260528001'
+  form.apCode = ''
   form.payee = ''
   form.amount = 0
   form.method = '银行转账'
@@ -205,13 +221,46 @@ function openCreate() {
   createVisible.value = true
 }
 
-function submitCreate() {
+async function submitCreate() {
   if (!form.payee) {
     ElMessage.warning('请输入收款方')
     return
   }
-  createVisible.value = false
-  ElMessage.success('已提交审批')
+  try {
+    await createPayment({
+      type: form.type,
+      apCode: form.apCode,
+      payee: form.payee,
+      amount: form.amount,
+      method: form.method,
+      remark: form.remark,
+    })
+    createVisible.value = false
+    ElMessage.success('已提交审批')
+    loadAll()
+  } catch (e: any) {
+    ElMessage.error(e.message || '提交失败')
+  }
+}
+
+async function handleApprove(row: Payment) {
+  try {
+    await approvePayment(row.id!)
+    ElMessage.success('操作成功')
+    loadAll()
+  } catch (e: any) {
+    ElMessage.error(e.message || '操作失败')
+  }
+}
+
+async function handleReject(row: Payment) {
+  try {
+    await rejectPayment(row.id!)
+    ElMessage.success('已驳回')
+    loadAll()
+  } catch (e: any) {
+    ElMessage.error(e.message || '操作失败')
+  }
 }
 
 function handleExport() {
@@ -219,6 +268,7 @@ function handleExport() {
 }
 
 function handleRefresh() {
+  loadAll()
   ElMessage.success('已刷新')
 }
 </script>

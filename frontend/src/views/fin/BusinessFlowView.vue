@@ -126,14 +126,33 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { businessFlowStats } from '@/api/fin/businessFlow'
 
-const statCards = [
-  { label: '销售订单数量', value: '128 笔', trend: '本月', color: 'blue' },
-  { label: '采购订单数量', value: '86 笔', trend: '本月', color: 'green' },
-  { label: '关联财务单据', value: '214 张', trend: '应收+应付', color: 'orange' },
-  { label: '成本核算准确率', value: '98.6%', trend: '实时同步', color: 'purple' },
-]
+const stats = ref({ income: 0, expense: 0, total: 0, confirmed: 0, processing: 0 })
+
+const statCards = computed(() => [
+  { label: '财务流水总数', value: `${stats.value.total} 笔`, trend: '全部业务流水', color: 'blue' },
+  { label: '收入流水金额', value: formatWan(stats.value.income), trend: '收入侧', color: 'green' },
+  { label: '支出流水金额', value: formatWan(stats.value.expense), trend: '成本侧', color: 'orange' },
+  { label: '已确认流水', value: `${stats.value.confirmed} 笔`, trend: `处理中 ${stats.value.processing} 笔`, color: 'purple' },
+])
+
+async function loadStats() {
+  try {
+    stats.value = await businessFlowStats()
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
+
+onMounted(loadStats)
+
+function formatWan(value: number) {
+  const wan = Number(value || 0) / 10000
+  return `¥${wan.toFixed(1)}万`
+}
 
 const salesFlow = [
   { title: '商机确认', tag: 'CRM', desc: '客户需求、报价', color: 'green', arrow: false },

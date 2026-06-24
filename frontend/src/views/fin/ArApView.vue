@@ -110,55 +110,59 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getArap, type ArapReceivable, type ArapPayable } from '@/api/fin/arap'
 
 const activeTab = ref<'ar' | 'ap'>('ar')
 const keyword = ref('')
 
-const statCards = [
-  { label: '应收账款总额', value: '¥865,000', unit: '', trend: '12 笔待回款', trendType: '', color: 'blue', icon: '📥' },
-  { label: '应付账款总额', value: '¥428,500', unit: '', trend: '8 笔待付款', trendType: '', color: 'red', icon: '📤' },
-  { label: '逾期应收', value: '¥126,000', unit: '', trend: '3 笔逾期', trendType: 'down', color: 'orange', icon: '⚠️' },
-  { label: '账龄分析', value: '28.5', unit: '天', trend: '较上月缩短 3.2 天', trendType: 'up', color: 'green', icon: '📊' },
-]
+const receivables = ref<ArapReceivable[]>([])
+const payables = ref<ArapPayable[]>([])
+const stats = ref({ arTotal: 0, apTotal: 0, arCount: 0, apCount: 0, arOverdue: 0 })
 
-const receivables = [
-  { code: 'AR-2026-0515-001', customer: '深圳XX科技有限公司', salesOrder: 'SO20260515001', contract: 'HT-2026-0318', contractAmount: 280000, received: 196000, pending: 84000, dueDate: '2026-06-05', status: '即将到期' },
-  { code: 'AR-2026-0518-002', customer: '广州YY电子股份', salesOrder: 'SO20260518001', contract: 'HT-2026-0325', contractAmount: 156000, received: 78000, pending: 78000, dueDate: '2026-06-15', status: '部分回款' },
-  { code: 'AR-2026-0520-003', customer: '上海ZZ精密制造', salesOrder: 'SO20260520001', contract: 'HT-2026-0401', contractAmount: 320000, received: 0, pending: 320000, dueDate: '2026-06-20', status: '待回款' },
-  { code: 'AR-2026-0428-004', customer: '北京AA科技集团', salesOrder: 'SO20260428001', contract: 'HT-2026-0215', contractAmount: 186000, received: 186000, pending: 0, dueDate: '2026-05-15', status: '已回款' },
-  { code: 'AR-2026-0420-005', customer: '杭州BB智能装备', salesOrder: 'SO20260420001', contract: 'HT-2026-0210', contractAmount: 245000, received: 120000, pending: 125000, dueDate: '2026-05-10', status: '逾期' },
-]
+const statCards = computed(() => [
+  { label: '应收账款总额', value: formatMoney(stats.value.arTotal), unit: '', trend: `${stats.value.arCount} 笔待回款`, trendType: '', color: 'blue', icon: '📥' },
+  { label: '应付账款总额', value: formatMoney(stats.value.apTotal), unit: '', trend: `${stats.value.apCount} 笔待付款`, trendType: '', color: 'red', icon: '📤' },
+  { label: '逾期应收', value: String(stats.value.arOverdue), unit: '笔', trend: '需重点跟进', trendType: 'down', color: 'orange', icon: '⚠️' },
+  { label: '账龄分析', value: '28.5', unit: '天', trend: '平均回款周期', trendType: 'up', color: 'green', icon: '📊' },
+])
 
-const payables = [
-  { code: 'AP-2026-0515-001', supplier: '深圳XX电子元件', purchaseOrder: 'PO-2026-0515', payableAmount: 45600, paid: 0, pending: 45600, dueDate: '2026-06-02', status: '即将到期' },
-  { code: 'AP-2026-0518-002', supplier: '东莞YY五金', purchaseOrder: 'PO-2026-0518', payableAmount: 18300, paid: 0, pending: 18300, dueDate: '2026-06-10', status: '待付款' },
-  { code: 'AP-2026-0520-003', supplier: '苏州ZZ原材料', purchaseOrder: 'PO-2026-0520', payableAmount: 62800, paid: 0, pending: 62800, dueDate: '2026-06-18', status: '待付款' },
-  { code: 'AP-2026-0510-004', supplier: '宁波CC塑胶', purchaseOrder: 'PO-2026-0510', payableAmount: 35200, paid: 35200, pending: 0, dueDate: '2026-05-28', status: '已付款' },
-]
+async function loadAll() {
+  try {
+    const data = await getArap({ keyword: keyword.value })
+    receivables.value = data.receivables
+    payables.value = data.payables
+    stats.value = data.stats
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
+
+onMounted(loadAll)
 
 const filteredReceivables = computed(() =>
-  receivables.filter((r) => !keyword.value || r.customer.includes(keyword.value) || r.code.includes(keyword.value)),
+  receivables.value.filter((r) => !keyword.value || r.customer.includes(keyword.value) || r.code.includes(keyword.value)),
 )
 const filteredPayables = computed(() =>
-  payables.filter((r) => !keyword.value || r.supplier.includes(keyword.value) || r.code.includes(keyword.value)),
+  payables.value.filter((r) => !keyword.value || r.supplier.includes(keyword.value) || r.code.includes(keyword.value)),
 )
 
 function formatMoney(value: number) {
-  return `¥${value.toLocaleString()}`
+  return `¥${Number(value || 0).toLocaleString()}`
 }
 
 function arTagType(status: string) {
-  if (status === '已回款') return 'success'
+  if (status === '已回款' || status === '已核销') return 'success'
   if (status === '逾期') return 'danger'
   if (status === '即将到期') return 'warning'
-  if (status === '部分回款') return 'primary'
+  if (status === '部分回款' || status === '部分核销') return 'primary'
   return 'info'
 }
 
 function apTagType(status: string) {
   if (status === '已付款') return 'success'
+  if (status === '逾期') return 'danger'
   if (status === '即将到期') return 'warning'
   return 'info'
 }
@@ -168,7 +172,7 @@ function handleExport() {
 }
 
 function handleGenerate() {
-  ElMessage.success('生成应收款成功')
+  ElMessage.info('请在客户订单中生成应收款')
 }
 </script>
 

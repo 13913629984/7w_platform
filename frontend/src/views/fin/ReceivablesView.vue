@@ -71,8 +71,8 @@
           <el-table-column label="操作" min-width="160" fixed="right">
             <template #default="{ row }">
               <el-button link type="primary">详情</el-button>
-              <el-button v-if="row.pending > 0" link type="primary">回款核销</el-button>
-              <el-button v-if="!row.invoiced" link type="primary">开票</el-button>
+              <el-button v-if="row.pending > 0" link type="primary" @click="handleWriteOff(row)">回款核销</el-button>
+              <el-button v-if="!row.invoiced" link type="primary" @click="handleInvoice(row)">开票</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -115,8 +115,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import {
+  listReceivables,
+  listReceiptRecords,
+  receivableStats,
+  writeOffReceivable,
+  invoiceReceivable,
+  type Receivable,
+  type ReceiptRecord,
+} from '@/api/fin/receivable'
+import { ElMessageBox } from 'element-plus'
 
 const activeTab = ref<'list' | 'records'>('list')
 const keyword = ref('')
@@ -124,33 +134,22 @@ const statusFilter = ref('')
 const customerFilter = ref('')
 const recordKeyword = ref('')
 
-const statCards = [
-  { label: '应收款总额', value: '¥31,100,000', trend: '全部应收款', trendType: '', color: 'blue', icon: '📥' },
-  { label: '已核销', value: '¥3,200,000', trend: '已回款金额', trendType: '', color: 'green', icon: '✅' },
-  { label: '待核销', value: '¥17,090,000', trend: '待回款金额', trendType: '', color: 'orange', icon: '⏳' },
-  { label: '本月回款', value: '¥285万', trend: '本月累计回款', trendType: '', color: 'purple', icon: '💰' },
-]
+const receivables = ref<Receivable[]>([])
+const records = ref<ReceiptRecord[]>([])
+const stats = ref({ total: 0, writtenOff: 0, pending: 0, monthReceipt: 0, count: 0 })
 
-const receivables = [
-  { code: 'AR20260528001', customer: '华为技术有限公司', salesOrder: 'SO20260528001', amount: 5800000, writtenOff: 4060000, pending: 1740000, invoiced: true, dueDate: '2026-06-28', status: '部分核销' },
-  { code: 'AR20260527001', customer: '比亚迪股份有限公司', salesOrder: 'SO20260527001', amount: 8600000, writtenOff: 0, pending: 8600000, invoiced: true, dueDate: '2026-06-27', status: '待核销' },
-  { code: 'AR20260526001', customer: '宁德时代新能源', salesOrder: 'SO20260526001', amount: 12000000, writtenOff: 6000000, pending: 6000000, invoiced: false, dueDate: '2026-06-26', status: '部分核销' },
-  { code: 'AR20260525001', customer: '小米科技有限公司', salesOrder: 'SO20260525001', amount: 3200000, writtenOff: 3200000, pending: 0, invoiced: true, dueDate: '2026-05-25', status: '已核销' },
-  { code: 'AR20260524001', customer: '大疆创新科技有限公司', salesOrder: 'SO20260524001', amount: 1500000, writtenOff: 750000, pending: 750000, invoiced: true, dueDate: '2026-05-10', status: '逾期' },
-]
-
-const records = [
-  { code: 'RK20260528001', customer: '华为技术有限公司', receivableCode: 'AR20260528001', amount: 4060000, method: '银行转账', date: '2026-06-15', operator: '张三' },
-  { code: 'RK20260526001', customer: '宁德时代新能源', receivableCode: 'AR20260526001', amount: 6000000, method: '银行转账', date: '2026-06-12', operator: '李四' },
-  { code: 'RK20260525001', customer: '小米科技有限公司', receivableCode: 'AR20260525001', amount: 3200000, method: '承兑汇票', date: '2026-05-20', operator: '王五' },
-  { code: 'RK20260524001', customer: '大疆创新科技有限公司', receivableCode: 'AR20260524001', amount: 750000, method: '银行转账', date: '2026-05-08', operator: '张三' },
-]
+const statCards = computed(() => [
+  { label: '应收款总额', value: formatMoney(stats.value.total), trend: '全部应收款', trendType: '', color: 'blue', icon: '📥' },
+  { label: '已核销', value: formatMoney(stats.value.writtenOff), trend: '已回款金额', trendType: '', color: 'green', icon: '✅' },
+  { label: '待核销', value: formatMoney(stats.value.pending), trend: '待回款金额', trendType: '', color: 'orange', icon: '⏳' },
+  { label: '本月回款', value: formatMoney(stats.value.monthReceipt), trend: '本月累计回款', trendType: '', color: 'purple', icon: '💰' },
+])
 
 const statusOptions = ['待核销', '部分核销', '已核销', '逾期']
-const customerOptions = computed(() => Array.from(new Set(receivables.map((r) => r.customer))))
+const customerOptions = computed(() => Array.from(new Set(receivables.value.map((r) => r.customer))))
 
 const filteredReceivables = computed(() =>
-  receivables.filter((r) => {
+  receivables.value.filter((r) => {
     const matchedKeyword = !keyword.value || r.customer.includes(keyword.value) || r.code.includes(keyword.value)
     const matchedStatus = !statusFilter.value || r.status === statusFilter.value
     const matchedCustomer = !customerFilter.value || r.customer === customerFilter.value
@@ -159,11 +158,24 @@ const filteredReceivables = computed(() =>
 )
 
 const filteredRecords = computed(() =>
-  records.filter((r) => !recordKeyword.value || r.customer.includes(recordKeyword.value) || r.code.includes(recordKeyword.value)),
+  records.value.filter((r) => !recordKeyword.value || r.customer.includes(recordKeyword.value) || r.code.includes(recordKeyword.value)),
 )
 
+async function loadAll() {
+  try {
+    const [list, recs, st] = await Promise.all([listReceivables(), listReceiptRecords(), receivableStats()])
+    receivables.value = list
+    records.value = recs
+    stats.value = st
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
+
+onMounted(loadAll)
+
 function formatMoney(value: number) {
-  return `¥${value.toLocaleString()}`
+  return `¥${Number(value || 0).toLocaleString()}`
 }
 
 function statusTagType(status: string) {
@@ -179,11 +191,36 @@ function handleExport() {
 }
 
 function handleRefresh() {
+  loadAll()
   ElMessage.success('已刷新')
 }
 
 function handleGenerate() {
-  ElMessage.success('生成应收款成功')
+  ElMessage.info('请在客户订单中生成应收款')
+}
+
+async function handleWriteOff(row: Receivable) {
+  try {
+    const { value } = await ElMessageBox.prompt(`请输入回款金额（待核销 ${formatMoney(row.pending)}）`, '回款核销', {
+      inputPattern: /^\d+(\.\d{1,2})?$/,
+      inputErrorMessage: '请输入有效金额',
+    })
+    await writeOffReceivable({ id: row.id!, amount: Number(value) })
+    ElMessage.success('回款核销成功')
+    loadAll()
+  } catch (e: any) {
+    if (e !== 'cancel') ElMessage.error(e.message || '操作失败')
+  }
+}
+
+async function handleInvoice(row: Receivable) {
+  try {
+    await invoiceReceivable(row.id!)
+    ElMessage.success('开票成功')
+    loadAll()
+  } catch (e: any) {
+    ElMessage.error(e.message || '操作失败')
+  }
 }
 </script>
 

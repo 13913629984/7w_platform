@@ -141,21 +141,53 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { getWorkspace } from '@/api/fin/workspace'
 
 const DONUT_COLORS = ['#409eff', '#67c23a', '#e6a23c', '#909399']
 
 const router = useRouter()
 const trendRange = ref('6')
 
-const statCards = [
-  { label: '本月收入', value: '¥328.5万', trend: '+15.2% 较上月', trendType: 'up', color: 'green', icon: '📈' },
-  { label: '本月支出', value: '¥186.3万', trend: '-8.5% 较上月', trendType: 'down', color: 'red', icon: '📉' },
-  { label: '本月利润', value: '¥142.2万', trend: '+28.6% 较上月', trendType: 'up', color: 'blue', icon: '💰' },
-  { label: '待回款金额', value: '¥86.5万', trend: '待回款 12 笔', trendType: '', color: 'orange', icon: '⏳' },
-]
+const wsStats = ref({ income: 0, expense: 0, profit: 0, pendingReceipt: 0 })
+
+const statCards = computed(() => [
+  { label: '本月收入', value: formatWan(wsStats.value.income), trend: '本月累计收入', trendType: 'up', color: 'green', icon: '📈' },
+  { label: '本月支出', value: formatWan(wsStats.value.expense), trend: '本月累计支出', trendType: 'down', color: 'red', icon: '📉' },
+  { label: '本月利润', value: formatWan(wsStats.value.profit), trend: '收入减支出', trendType: 'up', color: 'blue', icon: '💰' },
+  { label: '待回款金额', value: formatWan(wsStats.value.pendingReceipt), trend: '应收待回款', trendType: '', color: 'orange', icon: '⏳' },
+])
+
+const MODULE_COLORS: Record<string, string> = { 'CRM 合同': 'green', '采购订单': 'orange', '维保工单': 'blue', '电测系统': 'blue', '费用管理': 'orange' }
+const recentRecords = ref<{ code: string; bizType: string; module: string; moduleColor: string; amount: number; direction: string; status: string; date: string }[]>([])
+
+async function loadWorkspace() {
+  try {
+    const data = await getWorkspace()
+    wsStats.value = data.stats
+    recentRecords.value = data.records.map((r) => ({
+      code: r.code,
+      bizType: r.bizType,
+      module: r.module,
+      moduleColor: MODULE_COLORS[r.module] || 'blue',
+      amount: r.amount,
+      direction: r.direction,
+      status: r.status,
+      date: r.date,
+    }))
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
+
+onMounted(loadWorkspace)
+
+function formatWan(value: number) {
+  const wan = Number(value || 0) / 10000
+  return `¥${wan.toFixed(1)}万`
+}
 
 // 月度收入支出趋势 (单位: 万)
 const trend6 = [
@@ -181,14 +213,6 @@ const income = [
   { name: '服务收入', value: 980 },
   { name: '维保收入', value: 320 },
   { name: '其他收入', value: 185 },
-]
-
-const recentRecords = [
-  { code: 'FIN-2026-0528-001', bizType: '销售回款', module: 'CRM 合同', moduleColor: 'green', amount: 128000, direction: '收入', status: '已确认', date: '2026-05-28' },
-  { code: 'FIN-2026-0528-002', bizType: '采购付款', module: '采购订单', moduleColor: 'orange', amount: 45600, direction: '支出', status: '已支付', date: '2026-05-28' },
-  { code: 'FIN-2026-0527-003', bizType: '维保结算', module: '维保工单', moduleColor: 'blue', amount: 8500, direction: '支出', status: '处理中', date: '2026-05-27' },
-  { code: 'FIN-2026-0527-002', bizType: '销售回款', module: 'CRM 合同', moduleColor: 'green', amount: 56000, direction: '收入', status: '已确认', date: '2026-05-27' },
-  { code: 'FIN-2026-0526-001', bizType: '电气测试费', module: '电气测试', moduleColor: 'blue', amount: 3200, direction: '支出', status: '已支付', date: '2026-05-26' },
 ]
 
 const receivableReminders = [

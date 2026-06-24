@@ -170,30 +170,50 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import {
+  listCollections,
+  listAllocations,
+  costStats,
+  costCharts,
+  type CostAllocation,
+} from '@/api/fin/cost'
 
 const DONUT_COLORS = ['#409eff', '#e6a23c', '#67c23a', '#909399', '#f56c6c', '#5bbfd4']
 
 const keyword = ref('')
 const costTypeFilter = ref('')
 
-const statCards = [
-  { label: '本月归集成本', value: '¥214,600', trend: '4 笔归集', trendType: '', color: 'blue', icon: '📥' },
-  { label: '已分配费用', value: '¥142,100', trend: '4 笔分配', trendType: '', color: 'green', icon: '✅' },
-  { label: '累计成本', value: '¥336,700', trend: '+12.3% 较上月', trendType: 'up', color: 'orange', icon: '📊' },
-  { label: '待处理归集', value: '¥49,581', trend: '待处理归集', trendType: 'down', color: 'red', icon: '⏳' },
-]
+interface CollectionRow {
+  id?: number
+  code: string
+  costType: string
+  paymentCode: string
+  object: string
+  amount: number
+  allocStatus: string
+  date: string
+}
+
+const stats = ref({ collected: 0, allocated: 0, accumulated: 0, pending: 0, collectionCount: 0, allocationCount: 0 })
+const distribution = ref<{ name: string; value: number }[]>([])
+const collections = ref<CollectionRow[]>([])
+const allocations = ref<CostAllocation[]>([])
+
+const statCards = computed(() => [
+  { label: '本月归集成本', value: formatMoney(stats.value.collected), trend: `${stats.value.collectionCount} 笔归集`, trendType: '', color: 'blue', icon: '📥' },
+  { label: '已分配费用', value: formatMoney(stats.value.allocated), trend: `${stats.value.allocationCount} 笔分配`, trendType: '', color: 'green', icon: '✅' },
+  { label: '累计成本', value: formatMoney(stats.value.accumulated), trend: '归集+分配合计', trendType: 'up', color: 'orange', icon: '📊' },
+  { label: '待处理归集', value: formatMoney(stats.value.pending), trend: '待处理归集', trendType: 'down', color: 'red', icon: '⏳' },
+])
 
 const costTypeOptions = ['原材料', '设备采购', '运输费', '制造费用', '管理费用']
 
-const distribution = [
-  { name: '原材料成本', value: 210000 },
-  { name: '设备采购', value: 128000 },
-  { name: '运输费用', value: 18000 },
-  { name: '制造费用', value: 28000 },
-  { name: '管理费用', value: 22000 },
-]
+const pendingPayments = ref([
+  { code: 'PAY20260528001', apCode: 'AP20260526001', supplier: '宁波CC塑胶', amount: 39776, costType: '原材料' },
+  { code: 'PAY20260528002', apCode: 'AP20260528001', supplier: '上海芯片公司', amount: 9605, costType: '原材料' },
+])
 
 // 月度成本趋势 (单位: 万)
 const trendData = [
@@ -205,27 +225,36 @@ const trendData = [
   { name: '6月', material: 530, expense: 110, total: 660 },
 ]
 
-const pendingPayments = ref([
-  { code: 'PAY20260528001', apCode: 'AP20260526001', supplier: '宁波CC塑胶', amount: 39776, costType: '原材料' },
-  { code: 'PAY20260528002', apCode: 'AP20260528001', supplier: '上海芯片公司', amount: 9605, costType: '原材料' },
-])
+async function loadAll() {
+  try {
+    const [cols, allocs, st, charts] = await Promise.all([
+      listCollections(),
+      listAllocations(),
+      costStats(),
+      costCharts(),
+    ])
+    collections.value = cols.map((c) => ({
+      id: c.id,
+      code: c.code,
+      costType: c.costType,
+      paymentCode: '',
+      object: c.source,
+      amount: c.amount,
+      allocStatus: c.status === '已分配' ? '已分配' : '未分配',
+      date: c.date,
+    }))
+    allocations.value = allocs
+    stats.value = st
+    distribution.value = charts.distribution
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
 
-const collections = [
-  { code: 'COL20260527001', costType: '原材料', paymentCode: 'PAY20260527001', object: '产品A-主板', amount: 45600, allocStatus: '已分配', date: '2026-05-27 10:00:00' },
-  { code: 'COL20260526001', costType: '设备采购', paymentCode: 'PAY20260526001', object: '生产设备-铣床', amount: 128000, allocStatus: '部分分配', date: '2026-05-26 09:00:00' },
-  { code: 'COL20260525001', costType: '运输费', paymentCode: 'PAY20260525001', object: '运输费用', amount: 8500, allocStatus: '未分配', date: '2026-05-25 14:00:00' },
-  { code: 'COL20260524001', costType: '原材料', paymentCode: 'PAY20260524001', object: '产品B-外壳', amount: 32500, allocStatus: '已分配', date: '2026-05-24 11:00:00' },
-]
-
-const allocations = [
-  { code: 'ALL20260527001', costType: '制造费用', collectionCode: 'COL20260527001', object: '产品A批次1', amount: 22800, ratio: '50%', date: '2026-05-27 11:00:00' },
-  { code: 'ALL20260527002', costType: '制造费用', collectionCode: 'COL20260527001', object: '产品A批次2', amount: 22800, ratio: '50%', date: '2026-05-27 11:30:00' },
-  { code: 'ALL20260526001', costType: '管理费用', collectionCode: 'COL20260526001', object: '车间A', amount: 64000, ratio: '50%', date: '2026-05-26 10:00:00' },
-  { code: 'ALL20260524001', costType: '制造费用', collectionCode: 'COL20260524001', object: '产品B批次3', amount: 32500, ratio: '100%', date: '2026-05-24 12:00:00' },
-]
+onMounted(loadAll)
 
 const filteredCollections = computed(() =>
-  collections.filter((r) => {
+  collections.value.filter((r) => {
     const matchedKeyword = !keyword.value || r.object.includes(keyword.value) || r.code.includes(keyword.value)
     const matchedType = !costTypeFilter.value || r.costType === costTypeFilter.value
     return matchedKeyword && matchedType
@@ -233,9 +262,9 @@ const filteredCollections = computed(() =>
 )
 
 const donutSlices = computed(() => {
-  const total = distribution.reduce((sum, d) => sum + d.value, 0) || 1
+  const total = distribution.value.reduce((sum, d) => sum + d.value, 0) || 1
   let acc = 0
-  return distribution.map((d, idx) => {
+  return distribution.value.map((d, idx) => {
     const start = (acc / total) * 100
     acc += d.value
     const end = (acc / total) * 100
@@ -249,7 +278,7 @@ const donutGradient = computed(() => {
 })
 
 const totalCostLabel = computed(() => {
-  const total = distribution.reduce((sum, d) => sum + d.value, 0)
+  const total = distribution.value.reduce((sum, d) => sum + d.value, 0)
   return total >= 10000 ? `${(total / 10000).toFixed(1)}万` : total.toLocaleString()
 })
 
@@ -301,7 +330,7 @@ const trend = computed(() => {
 })
 
 function formatMoney(value: number) {
-  return `¥${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return `¥${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 function costTagType(type: string) {
@@ -324,6 +353,7 @@ function handleExport() {
   ElMessage.success('导出成功')
 }
 function handleRefresh() {
+  loadAll()
   ElMessage.success('已刷新')
 }
 function handleBatchCollect() {

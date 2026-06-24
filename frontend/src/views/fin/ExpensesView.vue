@@ -84,30 +84,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { listExpenses, expenseStats, type Expense } from '@/api/fin/expense'
 
 const startMonth = ref('')
 const endMonth = ref('')
 
-const statCards = [
-  { label: '本月销售费用', value: '¥86,000', trend: '-6.5% 较上月', trendType: 'down', color: 'blue', icon: '💼' },
-  { label: '本月管理费用', value: '¥156,000', trend: '+5.4% 较上月', trendType: 'up', color: 'orange', icon: '🏢' },
-  { label: '本月研发费用', value: '¥268,000', trend: '-2.1% 较上月', trendType: 'down', color: 'purple', icon: '🔬' },
-  { label: '本月总费用', value: '¥510,000', trend: '-1.8% 较上月', trendType: 'down', color: 'red', icon: '📊' },
-]
+const expenses = ref<Expense[]>([])
+const stats = ref({ sales: 0, manage: 0, rd: 0, total: 0 })
 
-const expenses = [
-  { code: 'EXP-2026-0528-001', type: '销售费用', module: 'CRM', item: '客户招待费', amount: 3500, date: '2026-05-28', applicant: '张销售', approved: true },
-  { code: 'EXP-2026-0527-002', type: '管理费用', module: '系统', item: '办公设备采购', amount: 8200, date: '2026-05-27', applicant: '李行政', approved: false },
-  { code: 'EXP-2026-0526-003', type: '研发费用', module: '系统', item: '云服务器费用', amount: 12800, date: '2026-05-26', applicant: '王研发', approved: true },
-  { code: 'EXP-2026-0525-004', type: '财务费用', module: '系统', item: '银行手续费', amount: 560, date: '2026-05-25', applicant: '财务部', approved: true },
-  { code: 'EXP-2026-0524-005', type: '销售费用', module: 'CRM', item: '差旅费', amount: 4200, date: '2026-05-24', applicant: '赵销售', approved: true },
-  { code: 'EXP-2026-0523-006', type: '管理费用', module: '维保', item: '车辆维修', amount: 2350, date: '2026-05-23', applicant: '孙车队', approved: false },
-]
+const statCards = computed(() => [
+  { label: '本月销售费用', value: formatMoney(stats.value.sales), trend: '销售费用合计', trendType: '', color: 'blue', icon: '💼' },
+  { label: '本月管理费用', value: formatMoney(stats.value.manage), trend: '管理费用合计', trendType: '', color: 'orange', icon: '🏢' },
+  { label: '本月研发费用', value: formatMoney(stats.value.rd), trend: '研发费用合计', trendType: '', color: 'purple', icon: '🔬' },
+  { label: '本月总费用', value: formatMoney(stats.value.total), trend: '全部费用合计', trendType: '', color: 'red', icon: '📊' },
+])
+
+async function loadAll() {
+  try {
+    const [list, st] = await Promise.all([
+      listExpenses({ startMonth: startMonth.value, endMonth: endMonth.value }),
+      expenseStats(),
+    ])
+    expenses.value = list
+    stats.value = st
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
+
+onMounted(loadAll)
+watch([startMonth, endMonth], loadAll)
 
 function formatMoney(value: number) {
-  return `¥${value.toLocaleString()}`
+  return `¥${Number(value || 0).toLocaleString()}`
 }
 
 function typeTagType(type: string) {
