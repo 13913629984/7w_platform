@@ -1,4 +1,4 @@
-import { request, unwrap } from './http'
+import { request, unwrap, type PageParams, type PageResult } from './http'
 
 export interface Receivable {
   id?: number
@@ -33,12 +33,12 @@ export interface ReceivableStats {
   count: number
 }
 
-export function listReceivables(params: { keyword?: string; status?: string; customer?: string } = {}) {
-  return unwrap<Receivable[]>(request.get('/fin/receivable/list', { params }))
+export function listReceivables(params: { keyword?: string; status?: string; customer?: string } & PageParams = {}) {
+  return unwrap<PageResult<Receivable>>(request.get('/fin/receivable/list', { params }))
 }
 
-export function listReceiptRecords(params: { keyword?: string } = {}) {
-  return unwrap<ReceiptRecord[]>(request.get('/fin/receivable/records', { params }))
+export function listReceiptRecords(params: { keyword?: string } & PageParams = {}) {
+  return unwrap<PageResult<ReceiptRecord>>(request.get('/fin/receivable/records', { params }))
 }
 
 export function receivableStats() {

@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,9 +21,11 @@ public class PaymentController {
     }
 
     @GetMapping("/list")
-    public ApiResult<List<Map<String, Object>>> list(@RequestParam(required = false) String keyword,
-                                                      @RequestParam(required = false) String status) {
-        return ApiResult.ok(paymentService.list(keyword, status));
+    public ApiResult<Map<String, Object>> list(@RequestParam(required = false) String keyword,
+                                               @RequestParam(required = false) String status,
+                                               @RequestParam(defaultValue = "1") Integer page,
+                                               @RequestParam(defaultValue = "10") Integer pageSize) {
+        return ApiResult.ok(paymentService.list(keyword, status, page, pageSize));
     }
 
     @GetMapping("/stats")

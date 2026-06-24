@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,15 +21,19 @@ public class ReceivableController {
     }
 
     @GetMapping("/list")
-    public ApiResult<List<Map<String, Object>>> list(@RequestParam(required = false) String keyword,
-                                                      @RequestParam(required = false) String status,
-                                                      @RequestParam(required = false) String customer) {
-        return ApiResult.ok(receivableService.list(keyword, status, customer));
+    public ApiResult<Map<String, Object>> list(@RequestParam(required = false) String keyword,
+                                               @RequestParam(required = false) String status,
+                                               @RequestParam(required = false) String customer,
+                                               @RequestParam(defaultValue = "1") Integer page,
+                                               @RequestParam(defaultValue = "10") Integer pageSize) {
+        return ApiResult.ok(receivableService.list(keyword, status, customer, page, pageSize));
     }
 
     @GetMapping("/records")
-    public ApiResult<List<Map<String, Object>>> records(@RequestParam(required = false) String keyword) {
-        return ApiResult.ok(receivableService.records(keyword));
+    public ApiResult<Map<String, Object>> records(@RequestParam(required = false) String keyword,
+                                                  @RequestParam(defaultValue = "1") Integer page,
+                                                  @RequestParam(defaultValue = "10") Integer pageSize) {
+        return ApiResult.ok(receivableService.records(keyword, page, pageSize));
     }
 
     @GetMapping("/stats")

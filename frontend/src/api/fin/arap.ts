@@ -1,4 +1,4 @@
-import { request, unwrap } from './http'
+import { request, unwrap, type PageParams } from './http'
 
 export interface ArapReceivable {
   id?: number
@@ -37,8 +37,12 @@ export interface ArapData {
   stats: ArapStats
   receivables: ArapReceivable[]
   payables: ArapPayable[]
+  arTotalCount: number
+  apTotalCount: number
+  page: number
+  pageSize: number
 }
 
-export function getArap(params: { keyword?: string } = {}) {
+export function getArap(params: { keyword?: string } & PageParams = {}) {
   return unwrap<ArapData>(request.get('/fin/arap', { params }))
 }

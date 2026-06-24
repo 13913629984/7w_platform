@@ -42,7 +42,7 @@
           </div>
         </div>
 
-        <el-table :data="filteredReceivables" stripe style="width: 100%">
+        <el-table :data="receivables" stripe style="width: 100%">
           <el-table-column prop="code" label="单据编号" min-width="150" />
           <el-table-column prop="customer" label="客户名称" min-width="160" show-overflow-tooltip />
           <el-table-column label="关联销售订单" min-width="140">
@@ -85,7 +85,7 @@
           </div>
         </div>
 
-        <el-table :data="filteredRecords" stripe style="width: 100%">
+        <el-table :data="records" stripe style="width: 100%">
           <el-table-column prop="code" label="回款单号" min-width="150" />
           <el-table-column prop="customer" label="客户名称" min-width="160" show-overflow-tooltip />
           <el-table-column prop="receivableCode" label="关联应收单" min-width="150" />
@@ -103,11 +103,14 @@
 
       <div class="pagination-bar">
         <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
           background
-          layout="total, prev, pager, next, jumper"
-          :total="activeTab === 'list' ? filteredReceivables.length : filteredRecords.length"
-          :page-size="10"
-          :current-page="1"
+          layout="total, sizes, prev, pager, next, jumper"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          @current-change="loadList"
+          @size-change="handleSizeChange"
         />
       </div>
     </div>
@@ -115,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   listReceivables,
@@ -148,28 +151,64 @@ const statCards = computed(() => [
 const statusOptions = ['待核销', '部分核销', '已核销', '逾期']
 const customerOptions = computed(() => Array.from(new Set(receivables.value.map((r) => r.customer))))
 
-const filteredReceivables = computed(() =>
-  receivables.value.filter((r) => {
-    const matchedKeyword = !keyword.value || r.customer.includes(keyword.value) || r.code.includes(keyword.value)
-    const matchedStatus = !statusFilter.value || r.status === statusFilter.value
-    const matchedCustomer = !customerFilter.value || r.customer === customerFilter.value
-    return matchedKeyword && matchedStatus && matchedCustomer
-  }),
-)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
-const filteredRecords = computed(() =>
-  records.value.filter((r) => !recordKeyword.value || r.customer.includes(recordKeyword.value) || r.code.includes(recordKeyword.value)),
-)
-
-async function loadAll() {
+async function loadList() {
   try {
-    const [list, recs, st] = await Promise.all([listReceivables(), listReceiptRecords(), receivableStats()])
-    receivables.value = list
-    records.value = recs
-    stats.value = st
+    if (activeTab.value === 'list') {
+      const res = await listReceivables({
+        keyword: keyword.value || undefined,
+        status: statusFilter.value || undefined,
+        customer: customerFilter.value || undefined,
+        page: currentPage.value,
+        pageSize: pageSize.value,
+      })
+      receivables.value = res.rows
+      total.value = res.total
+    } else {
+      const res = await listReceiptRecords({
+        keyword: recordKeyword.value || undefined,
+        page: currentPage.value,
+        pageSize: pageSize.value,
+      })
+      records.value = res.rows
+      total.value = res.total
+    }
   } catch (e: any) {
     ElMessage.error(e.message || '加载失败')
   }
+}
+
+function handleSearch() {
+  currentPage.value = 1
+  loadList()
+}
+
+function handleSizeChange() {
+  currentPage.value = 1
+  loadList()
+}
+
+// 切换标签页或筛选条件变化时回到第 1 页并重新请求
+watch(activeTab, () => {
+  currentPage.value = 1
+  total.value = 0
+  loadList()
+})
+watch([keyword, statusFilter, customerFilter, recordKeyword], handleSearch)
+
+async function loadStats() {
+  try {
+    stats.value = await receivableStats()
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
+
+async function loadAll() {
+  await Promise.all([loadList(), loadStats()])
 }
 
 onMounted(loadAll)

@@ -1,6 +1,7 @@
 package com.qws.fin;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qws.common.entity.FinExpense;
 import com.qws.common.mapper.FinExpenseMapper;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,10 @@ import java.util.Map;
 
 import static com.qws.fin.FinSupport.decimal;
 import static com.qws.fin.FinSupport.defaultText;
+import static com.qws.fin.FinSupport.normalizePage;
+import static com.qws.fin.FinSupport.normalizePageSize;
 import static com.qws.fin.FinSupport.nz;
+import static com.qws.fin.FinSupport.pageResult;
 import static com.qws.fin.FinSupport.text;
 
 /**
@@ -31,13 +35,15 @@ public class ExpenseService {
         this.expenseMapper = expenseMapper;
     }
 
-    public List<Map<String, Object>> list(String startMonth, String endMonth, String type) {
+    public Map<String, Object> list(String startMonth, String endMonth, String type, Integer page, Integer pageSize) {
         LambdaQueryWrapper<FinExpense> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(type)) wrapper.eq(FinExpense::getType, type);
         if (StringUtils.hasText(startMonth)) wrapper.ge(FinExpense::getDate, startMonth + "-01");
         if (StringUtils.hasText(endMonth)) wrapper.le(FinExpense::getDate, endMonth + "-31");
         wrapper.orderByDesc(FinExpense::getDate).orderByDesc(FinExpense::getId);
-        return expenseMapper.selectList(wrapper).stream().map(this::row).toList();
+        Page<FinExpense> result = expenseMapper.selectPage(new Page<>(normalizePage(page), normalizePageSize(pageSize)), wrapper);
+        List<Map<String, Object>> rows = result.getRecords().stream().map(this::row).toList();
+        return pageResult(rows, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
     public Map<String, Object> stats() {

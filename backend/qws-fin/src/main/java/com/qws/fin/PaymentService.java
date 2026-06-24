@@ -1,6 +1,7 @@
 package com.qws.fin;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qws.common.entity.FinPayment;
 import com.qws.common.mapper.FinPaymentMapper;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,10 @@ import java.util.Map;
 
 import static com.qws.fin.FinSupport.decimal;
 import static com.qws.fin.FinSupport.defaultText;
+import static com.qws.fin.FinSupport.normalizePage;
+import static com.qws.fin.FinSupport.normalizePageSize;
 import static com.qws.fin.FinSupport.nz;
+import static com.qws.fin.FinSupport.pageResult;
 import static com.qws.fin.FinSupport.text;
 
 /**
@@ -33,7 +37,7 @@ public class PaymentService {
         this.paymentMapper = paymentMapper;
     }
 
-    public List<Map<String, Object>> list(String keyword, String status) {
+    public Map<String, Object> list(String keyword, String status, Integer page, Integer pageSize) {
         LambdaQueryWrapper<FinPayment> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(keyword)) {
             String value = keyword.trim();
@@ -41,7 +45,9 @@ public class PaymentService {
         }
         if (StringUtils.hasText(status)) wrapper.eq(FinPayment::getStatus, status);
         wrapper.orderByDesc(FinPayment::getCreateTime).orderByDesc(FinPayment::getId);
-        return paymentMapper.selectList(wrapper).stream().map(this::row).toList();
+        Page<FinPayment> result = paymentMapper.selectPage(new Page<>(normalizePage(page), normalizePageSize(pageSize)), wrapper);
+        List<Map<String, Object>> rows = result.getRecords().stream().map(this::row).toList();
+        return pageResult(rows, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
     public Map<String, Object> stats() {

@@ -1,4 +1,4 @@
-import { request, unwrap } from './http'
+import { request, unwrap, type PageParams, type PageResult } from './http'
 
 export interface Payable {
   id?: number
@@ -33,8 +33,8 @@ export interface PayableStats {
   overdue: number
 }
 
-export function listPayables(params: { keyword?: string; status?: string } = {}) {
-  return unwrap<Payable[]>(request.get('/fin/payable/list', { params }))
+export function listPayables(params: { keyword?: string; status?: string } & PageParams = {}) {
+  return unwrap<PageResult<Payable>>(request.get('/fin/payable/list', { params }))
 }
 
 export function listPendingReceipts() {

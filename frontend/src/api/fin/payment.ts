@@ -1,4 +1,4 @@
-import { request, unwrap } from './http'
+import { request, unwrap, type PageParams, type PageResult } from './http'
 
 export interface Payment {
   id?: number
@@ -22,8 +22,8 @@ export interface PaymentStats {
   rejected: number
 }
 
-export function listPayments(params: { keyword?: string; status?: string } = {}) {
-  return unwrap<Payment[]>(request.get('/fin/payment/list', { params }))
+export function listPayments(params: { keyword?: string; status?: string } & PageParams = {}) {
+  return unwrap<PageResult<Payment>>(request.get('/fin/payment/list', { params }))
 }
 
 export function paymentStats() {

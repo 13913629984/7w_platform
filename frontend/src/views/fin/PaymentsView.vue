@@ -47,7 +47,7 @@
         </div>
       </div>
 
-      <el-table :data="filteredPayments" stripe style="width: 100%">
+      <el-table :data="payments" stripe style="width: 100%">
         <el-table-column prop="code" label="付款单号" min-width="150" />
         <el-table-column label="付款类型" width="110" align="center">
           <template #default="{ row }">
@@ -83,11 +83,14 @@
 
       <div class="pagination-bar">
         <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
           background
-          layout="total, prev, pager, next, jumper"
-          :total="filteredPayments.length"
-          :page-size="10"
-          :current-page="1"
+          layout="total, sizes, prev, pager, next, jumper"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          @current-change="loadList"
+          @size-change="handleSizeChange"
         />
       </div>
     </div>
@@ -133,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   listPayments,
@@ -167,13 +170,34 @@ const flowSteps = computed(() => [
 
 const statusOptions = ['待审批', '审批中', '已通过', '已付款', '已驳回']
 
-const filteredPayments = computed(() =>
-  payments.value.filter((r) => {
-    const matchedKeyword = !keyword.value || r.payee.includes(keyword.value) || r.code.includes(keyword.value)
-    const matchedStatus = !statusFilter.value || r.status === statusFilter.value
-    return matchedKeyword && matchedStatus
-  }),
-)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
+async function loadList() {
+  try {
+    const res = await listPayments({
+      keyword: keyword.value || undefined,
+      status: statusFilter.value || undefined,
+      page: currentPage.value,
+      pageSize: pageSize.value,
+    })
+    payments.value = res.rows
+    total.value = res.total
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
+
+function handleSizeChange() {
+  currentPage.value = 1
+  loadList()
+}
+
+watch([keyword, statusFilter], () => {
+  currentPage.value = 1
+  loadList()
+})
 
 const form = reactive({
   code: '',
@@ -187,9 +211,8 @@ const form = reactive({
 
 async function loadAll() {
   try {
-    const [list, st] = await Promise.all([listPayments(), paymentStats()])
-    payments.value = list
-    stats.value = st
+    stats.value = await paymentStats()
+    await loadList()
   } catch (e: any) {
     ElMessage.error(e.message || '加载失败')
   }

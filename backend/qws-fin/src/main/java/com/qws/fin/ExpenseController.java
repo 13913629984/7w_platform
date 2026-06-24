@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,10 +21,12 @@ public class ExpenseController {
     }
 
     @GetMapping("/list")
-    public ApiResult<List<Map<String, Object>>> list(@RequestParam(required = false) String startMonth,
-                                                      @RequestParam(required = false) String endMonth,
-                                                      @RequestParam(required = false) String type) {
-        return ApiResult.ok(expenseService.list(startMonth, endMonth, type));
+    public ApiResult<Map<String, Object>> list(@RequestParam(required = false) String startMonth,
+                                               @RequestParam(required = false) String endMonth,
+                                               @RequestParam(required = false) String type,
+                                               @RequestParam(defaultValue = "1") Integer page,
+                                               @RequestParam(defaultValue = "10") Integer pageSize) {
+        return ApiResult.ok(expenseService.list(startMonth, endMonth, type, page, pageSize));
     }
 
     @GetMapping("/stats")

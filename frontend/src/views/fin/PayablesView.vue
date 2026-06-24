@@ -60,7 +60,7 @@
         </div>
       </div>
 
-      <el-table :data="filteredPayables" stripe style="width: 100%">
+      <el-table :data="payables" stripe style="width: 100%">
         <el-table-column prop="code" label="AP单据号" min-width="150" />
         <el-table-column label="关联入库单" min-width="140">
           <template #default="{ row }"><el-button link type="primary">{{ row.receiptCode }}</el-button></template>
@@ -97,11 +97,14 @@
 
       <div class="pagination-bar">
         <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
           background
-          layout="total, prev, pager, next, jumper"
-          :total="filteredPayables.length"
-          :page-size="10"
-          :current-page="1"
+          layout="total, sizes, prev, pager, next, jumper"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          @current-change="loadList"
+          @size-change="handleSizeChange"
         />
       </div>
     </div>
@@ -109,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   listPayables,
@@ -136,20 +139,41 @@ const statCards = computed(() => [
 
 const statusOptions = ['待匹配', '待付款', '已付款', '逾期']
 
-const filteredPayables = computed(() =>
-  payables.value.filter((r) => {
-    const matchedKeyword = !keyword.value || r.supplier.includes(keyword.value) || r.code.includes(keyword.value)
-    const matchedStatus = !statusFilter.value || r.status === statusFilter.value
-    return matchedKeyword && matchedStatus
-  }),
-)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
+async function loadList() {
+  try {
+    const res = await listPayables({
+      keyword: keyword.value || undefined,
+      status: statusFilter.value || undefined,
+      page: currentPage.value,
+      pageSize: pageSize.value,
+    })
+    payables.value = res.rows
+    total.value = res.total
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
+
+function handleSizeChange() {
+  currentPage.value = 1
+  loadList()
+}
+
+watch([keyword, statusFilter], () => {
+  currentPage.value = 1
+  loadList()
+})
 
 async function loadAll() {
   try {
-    const [list, pending, st] = await Promise.all([listPayables(), listPendingReceipts(), payableStats()])
-    payables.value = list
+    const [pending, st] = await Promise.all([listPendingReceipts(), payableStats()])
     pendingReceipts.value = pending
     stats.value = st
+    await loadList()
   } catch (e: any) {
     ElMessage.error(e.message || '加载失败')
   }

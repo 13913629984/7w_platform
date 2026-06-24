@@ -72,11 +72,14 @@
 
       <div class="pagination-bar">
         <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
           background
-          layout="prev, pager, next"
-          :total="100"
-          :page-size="10"
-          :current-page="1"
+          layout="total, sizes, prev, pager, next, jumper"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          @current-change="loadList"
+          @size-change="handleSizeChange"
         />
       </div>
     </div>
@@ -94,6 +97,10 @@ const endMonth = ref('')
 const expenses = ref<Expense[]>([])
 const stats = ref({ sales: 0, manage: 0, rd: 0, total: 0 })
 
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
 const statCards = computed(() => [
   { label: '本月销售费用', value: formatMoney(stats.value.sales), trend: '销售费用合计', trendType: '', color: 'blue', icon: '💼' },
   { label: '本月管理费用', value: formatMoney(stats.value.manage), trend: '管理费用合计', trendType: '', color: 'orange', icon: '🏢' },
@@ -101,21 +108,41 @@ const statCards = computed(() => [
   { label: '本月总费用', value: formatMoney(stats.value.total), trend: '全部费用合计', trendType: '', color: 'red', icon: '📊' },
 ])
 
+async function loadList() {
+  try {
+    const res = await listExpenses({
+      startMonth: startMonth.value || undefined,
+      endMonth: endMonth.value || undefined,
+      page: currentPage.value,
+      pageSize: pageSize.value,
+    })
+    expenses.value = res.rows
+    total.value = res.total
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载失败')
+  }
+}
+
+function handleSizeChange() {
+  currentPage.value = 1
+  loadList()
+}
+
 async function loadAll() {
   try {
-    const [list, st] = await Promise.all([
-      listExpenses({ startMonth: startMonth.value, endMonth: endMonth.value }),
-      expenseStats(),
-    ])
-    expenses.value = list
-    stats.value = st
+    stats.value = await expenseStats()
+    await loadList()
   } catch (e: any) {
     ElMessage.error(e.message || '加载失败')
   }
 }
 
 onMounted(loadAll)
-watch([startMonth, endMonth], loadAll)
+// 月份筛选变化时回到第 1 页重新请求
+watch([startMonth, endMonth], () => {
+  currentPage.value = 1
+  loadList()
+})
 
 function formatMoney(value: number) {
   return `¥${Number(value || 0).toLocaleString()}`

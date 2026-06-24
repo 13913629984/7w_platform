@@ -28,8 +28,10 @@ public class WorkspaceController {
     }
 
     @GetMapping("/arap")
-    public ApiResult<Map<String, Object>> arap(@RequestParam(required = false) String keyword) {
-        return ApiResult.ok(workspaceService.arap(keyword));
+    public ApiResult<Map<String, Object>> arap(@RequestParam(required = false) String keyword,
+                                               @RequestParam(defaultValue = "1") Integer page,
+                                               @RequestParam(defaultValue = "10") Integer pageSize) {
+        return ApiResult.ok(workspaceService.arap(keyword, page, pageSize));
     }
 
     @GetMapping("/business-flow/list")

@@ -1,6 +1,7 @@
 package com.qws.fin;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qws.common.entity.FinReceiptRecord;
 import com.qws.common.entity.FinReceivable;
 import com.qws.common.mapper.FinReceiptRecordMapper;
@@ -16,9 +17,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.qws.fin.FinSupport.contains;
 import static com.qws.fin.FinSupport.decimal;
+import static com.qws.fin.FinSupport.normalizePage;
+import static com.qws.fin.FinSupport.normalizePageSize;
 import static com.qws.fin.FinSupport.nz;
+import static com.qws.fin.FinSupport.pageResult;
 import static com.qws.fin.FinSupport.text;
 
 /**
@@ -35,7 +38,7 @@ public class ReceivableService {
         this.recordMapper = recordMapper;
     }
 
-    public List<Map<String, Object>> list(String keyword, String status, String customer) {
+    public Map<String, Object> list(String keyword, String status, String customer, Integer page, Integer pageSize) {
         LambdaQueryWrapper<FinReceivable> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(keyword)) {
             String value = keyword.trim();
@@ -44,18 +47,23 @@ public class ReceivableService {
         if (StringUtils.hasText(status)) wrapper.eq(FinReceivable::getStatus, status);
         if (StringUtils.hasText(customer)) wrapper.eq(FinReceivable::getCustomer, customer);
         wrapper.orderByDesc(FinReceivable::getCreateTime).orderByDesc(FinReceivable::getId);
-        return receivableMapper.selectList(wrapper).stream().map(this::row).toList();
+        Page<FinReceivable> result = receivableMapper.selectPage(new Page<>(normalizePage(page), normalizePageSize(pageSize)), wrapper);
+        List<Map<String, Object>> rows = result.getRecords().stream().map(this::row).toList();
+        return pageResult(rows, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
-    public List<Map<String, Object>> records(String keyword) {
+    public Map<String, Object> records(String keyword, Integer page, Integer pageSize) {
         LambdaQueryWrapper<FinReceiptRecord> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(FinReceiptRecord::getCreateTime).orderByDesc(FinReceiptRecord::getId);
-        List<Map<String, Object>> rows = recordMapper.selectList(wrapper).stream().map(this::recordRow).toList();
         if (StringUtils.hasText(keyword)) {
-            String kw = keyword.trim().toLowerCase();
-            rows = rows.stream().filter(r -> contains(r.get("customer"), kw) || contains(r.get("code"), kw)).toList();
+            String value = keyword.trim();
+            wrapper.and(w -> w.like(FinReceiptRecord::getCustomer, value)
+                    .or().like(FinReceiptRecord::getCode, value)
+                    .or().like(FinReceiptRecord::getReceivableCode, value));
         }
-        return rows;
+        wrapper.orderByDesc(FinReceiptRecord::getCreateTime).orderByDesc(FinReceiptRecord::getId);
+        Page<FinReceiptRecord> result = recordMapper.selectPage(new Page<>(normalizePage(page), normalizePageSize(pageSize)), wrapper);
+        List<Map<String, Object>> rows = result.getRecords().stream().map(this::recordRow).toList();
+        return pageResult(rows, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
     public Map<String, Object> stats() {

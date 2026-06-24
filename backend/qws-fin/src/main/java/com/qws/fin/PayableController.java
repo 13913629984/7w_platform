@@ -22,9 +22,11 @@ public class PayableController {
     }
 
     @GetMapping("/list")
-    public ApiResult<List<Map<String, Object>>> list(@RequestParam(required = false) String keyword,
-                                                      @RequestParam(required = false) String status) {
-        return ApiResult.ok(payableService.list(keyword, status));
+    public ApiResult<Map<String, Object>> list(@RequestParam(required = false) String keyword,
+                                               @RequestParam(required = false) String status,
+                                               @RequestParam(defaultValue = "1") Integer page,
+                                               @RequestParam(defaultValue = "10") Integer pageSize) {
+        return ApiResult.ok(payableService.list(keyword, status, page, pageSize));
     }
 
     @GetMapping("/pending-receipts")

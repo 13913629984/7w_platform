@@ -1,4 +1,4 @@
-import { request, unwrap } from './http'
+import { request, unwrap, type PageParams, type PageResult } from './http'
 
 export interface Expense {
   id?: number
@@ -19,8 +19,8 @@ export interface ExpenseStats {
   total: number
 }
 
-export function listExpenses(params: { startMonth?: string; endMonth?: string; type?: string } = {}) {
-  return unwrap<Expense[]>(request.get('/fin/expense/list', { params }))
+export function listExpenses(params: { startMonth?: string; endMonth?: string; type?: string } & PageParams = {}) {
+  return unwrap<PageResult<Expense>>(request.get('/fin/expense/list', { params }))
 }
 
 export function expenseStats() {

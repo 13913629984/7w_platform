@@ -1,6 +1,7 @@
 package com.qws.fin;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qws.common.entity.FinPayable;
 import com.qws.common.entity.FinReceivable;
 import com.qws.common.entity.FinRecord;
@@ -8,6 +9,7 @@ import com.qws.common.mapper.FinPayableMapper;
 import com.qws.common.mapper.FinReceivableMapper;
 import com.qws.common.mapper.FinRecordMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -16,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.qws.fin.FinSupport.contains;
+import static com.qws.fin.FinSupport.normalizePage;
+import static com.qws.fin.FinSupport.normalizePageSize;
 import static com.qws.fin.FinSupport.nz;
 import static com.qws.fin.FinSupport.text;
 
@@ -60,33 +64,44 @@ public class WorkspaceService {
         return result;
     }
 
-    public Map<String, Object> arap(String keyword) {
-        List<Map<String, Object>> receivables = receivableMapper.selectList(new LambdaQueryWrapper<FinReceivable>()
-                        .orderByDesc(FinReceivable::getId)).stream()
-                .map(this::receivableRow)
-                .filter(r -> !hasKeyword(keyword) || contains(r.get("customer"), keyword.toLowerCase()) || contains(r.get("code"), keyword.toLowerCase()))
-                .toList();
-        List<Map<String, Object>> payables = payableMapper.selectList(new LambdaQueryWrapper<FinPayable>()
-                        .orderByDesc(FinPayable::getId)).stream()
-                .map(this::payableRow)
-                .filter(p -> !hasKeyword(keyword) || contains(p.get("supplier"), keyword.toLowerCase()) || contains(p.get("code"), keyword.toLowerCase()))
-                .toList();
+    public Map<String, Object> arap(String keyword, Integer page, Integer pageSize) {
+        boolean hasKw = hasKeyword(keyword);
+        String kw = hasKw ? keyword.trim() : null;
 
-        BigDecimal arTotal = receivables.stream().map(r -> nz((BigDecimal) r.get("pending"))).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal apTotal = payables.stream().map(p -> nz((BigDecimal) p.get("pending"))).reduce(BigDecimal.ZERO, BigDecimal::add);
-        long arOverdue = receivables.stream().filter(r -> "逾期".equals(text(r.get("status")))).count();
+        LambdaQueryWrapper<FinReceivable> arWrapper = new LambdaQueryWrapper<>();
+        if (hasKw) arWrapper.and(w -> w.like(FinReceivable::getCustomer, kw).or().like(FinReceivable::getCode, kw));
+        arWrapper.orderByDesc(FinReceivable::getId);
+
+        LambdaQueryWrapper<FinPayable> apWrapper = new LambdaQueryWrapper<>();
+        if (hasKw) apWrapper.and(w -> w.like(FinPayable::getSupplier, kw).or().like(FinPayable::getCode, kw));
+        apWrapper.orderByDesc(FinPayable::getId);
+
+        // 统计基于全部（关键字过滤后）数据，分页只作用于列表展示
+        List<Map<String, Object>> allReceivables = receivableMapper.selectList(arWrapper).stream().map(this::receivableRow).toList();
+        List<Map<String, Object>> allPayables = payableMapper.selectList(apWrapper).stream().map(this::payableRow).toList();
+
+        BigDecimal arTotal = allReceivables.stream().map(r -> nz((BigDecimal) r.get("pending"))).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal apTotal = allPayables.stream().map(p -> nz((BigDecimal) p.get("pending"))).reduce(BigDecimal.ZERO, BigDecimal::add);
+        long arOverdue = allReceivables.stream().filter(r -> "逾期".equals(text(r.get("status")))).count();
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("arTotal", arTotal);
         stats.put("apTotal", apTotal);
-        stats.put("arCount", receivables.size());
-        stats.put("apCount", payables.size());
+        stats.put("arCount", allReceivables.size());
+        stats.put("apCount", allPayables.size());
         stats.put("arOverdue", arOverdue);
+
+        Page<FinReceivable> arPage = receivableMapper.selectPage(new Page<>(normalizePage(page), normalizePageSize(pageSize)), arWrapper);
+        Page<FinPayable> apPage = payableMapper.selectPage(new Page<>(normalizePage(page), normalizePageSize(pageSize)), apWrapper);
 
         Map<String, Object> result = new HashMap<>();
         result.put("stats", stats);
-        result.put("receivables", receivables);
-        result.put("payables", payables);
+        result.put("receivables", arPage.getRecords().stream().map(this::receivableRow).toList());
+        result.put("payables", apPage.getRecords().stream().map(this::payableRow).toList());
+        result.put("arTotalCount", arPage.getTotal());
+        result.put("apTotalCount", apPage.getTotal());
+        result.put("page", arPage.getCurrent());
+        result.put("pageSize", arPage.getSize());
         return result;
     }
 
