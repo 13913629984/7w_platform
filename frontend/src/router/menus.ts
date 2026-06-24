@@ -69,12 +69,16 @@ export const menus: AppMenu[] = [
     permission: 'FIN',
     children: [
       { path: '/fin/workspace', title: '财务工作台', icon: '🖥️' },
-      { path: '/fin/receivables', title: '应收管理', icon: '📥' },
-      { path: '/fin/payables', title: '应付管理', icon: '📤' },
+      { path: '/fin/ar-ap', title: '应收应付', icon: '💱' },
+      { path: '/fin/receivables', title: '应收款管理', icon: '📥' },
+      { path: '/fin/payables', title: '应付款管理', icon: '📤' },
+      { path: '/fin/payments', title: '付款管理', icon: '💸' },
       { path: '/fin/expenses', title: '费用管理', icon: '🧾' },
       { path: '/fin/budgets', title: '预算管理', icon: '📊' },
+      { path: '/fin/cost-collection', title: '成本归集', icon: '🧮' },
+      { path: '/fin/business-flow', title: '业务流程', icon: '🔄' }
     ],
-  },  {
+  }, {
     path: '/wms',
     title: 'WMS仓储管理',
     icon: '📦',
