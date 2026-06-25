@@ -146,7 +146,7 @@
           </div>
           <el-table :data="item.locations" size="small" border>
             <el-table-column label="序号" type="index" width="70" align="center" />
-            <el-table-column label="库位" width="220"><template #default="{ row }"><el-select v-model="row.location" placeholder="选择库位" style="width:100%"><el-option v-for="loc in locations" :key="loc" :label="loc" :value="loc" /></el-select></template></el-table-column>
+            <el-table-column label="库位" width="240" prop="location"><template #header><span style="color:#f56c6c">*</span> 库位</template><template #default="{ row }"><el-select v-model="row.location" placeholder="请选择库位（必填）" filterable style="width:100%" no-data-text="该仓库暂无可用库位"><el-option v-for="loc in executeLocations" :key="loc.code" :label="`${loc.code} / ${loc.name}`" :value="loc.code" /></el-select></template></el-table-column>
             <el-table-column label="入库数量" width="140" align="center"><template #default="{ row }"><el-input-number v-model="row.qty" :min="0" :max="item.remainingQty" size="small" /></template></el-table-column>
             <el-table-column label="SN码（SN入库时填写）"><template #default="{ row }"><el-input v-model="row.snList" :disabled="item.method !== 'sn'" placeholder="SN码，逗号分隔" /></template></el-table-column>
             <el-table-column label="操作" width="100" align="center"><template #default="{ $index }"><el-button link type="danger" @click="removeLocation(item, $index)">删除</el-button></template></el-table-column>
@@ -173,9 +173,7 @@
         </el-form-item>
         <el-form-item label="入库仓库" required>
           <el-select v-model="createForm.warehouseCode" placeholder="请选择仓库" style="width:100%">
-            <el-option label="主仓库-A区" value="主仓库-A区" />
-            <el-option label="主仓库-B区" value="主仓库-B区" />
-            <el-option label="备件仓" value="备件仓" />
+            <el-option v-for="wh in warehouses" :key="wh.code" :label="wh.name" :value="wh.code" />
           </el-select>
         </el-form-item>
         <el-form-item label="入库人" required>
@@ -295,7 +293,7 @@ import {
   type InboundStatus,
   type InspectStatus,
 } from '@/api/wms/inbound'
-import { listLocations } from '@/api/wms/location'
+import { listLocations, type LocationItem } from '@/api/wms/location'
 import { listWarehouses, type WarehouseItem } from '@/api/wms/warehouse'
 
 type Method = InboundMethod
@@ -346,7 +344,11 @@ const orders = ref<InboundOrder[]>([])
 const inboundRecords = ref<InboundRecord[]>([])
 const snRecords = ref<SnRecord[]>([])
 const warehouses = ref<WarehouseItem[]>([])
-const locations = ref<string[]>([])
+const locations = ref<LocationItem[]>([])
+const executeLocations = computed(() => {
+  const wh = executeOrder.value?.warehouseCode
+  return locations.value.filter((item) => !wh || item.warehouseCode === wh)
+})
 
 const methodText: Record<Method, string> = { qty: '数量入库', sn: 'SN入库' }
 const statusText: Record<InboundStatus, string> = { completed: '已完成', partial: '部分入库', pending: '待入库' }
@@ -414,7 +416,7 @@ async function loadSnRecords() {
 async function loadOptions() {
   const [warehouseResponse, locationResponse] = await Promise.all([listWarehouses({ status: 1 }), listLocations({ status: 1 })])
   if (apiOk(warehouseResponse)) warehouses.value = warehouseResponse.data
-  if (apiOk(locationResponse)) locations.value = locationResponse.data.map((item) => item.code)
+  if (apiOk(locationResponse)) locations.value = locationResponse.data
 }
 
 async function refreshAll() {

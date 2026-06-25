@@ -149,7 +149,9 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="品牌" prop="brand">
-              <el-input v-model="form.brand" placeholder="请输入品牌" maxlength="50" />
+              <el-select v-model="form.brand" filterable allow-create default-first-option clearable placeholder="请选择品牌" style="width:100%">
+                <el-option v-for="item in brands" :key="item.id" :label="item.name" :value="item.name" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -169,7 +171,9 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="默认供应商" prop="supplier">
-              <el-input v-model="form.supplier" placeholder="如：上海智造" maxlength="100" />
+              <el-select v-model="form.supplier" filterable allow-create default-first-option clearable placeholder="请选择供应商" style="width:100%">
+                <el-option v-for="item in suppliers" :key="item.id" :label="item.name" :value="item.name" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -292,6 +296,8 @@ import {
   type MaterialItem,
   type MaterialStats,
 } from '@/api/wms/material'
+import { listBrands, type BrandItem } from '@/api/wms/brand'
+import { listSuppliers, type SupplierItem } from '@/api/wms/supplier'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -312,6 +318,8 @@ const categories = ref<MaterialCategory[]>([
 ])
 const stats = ref<MaterialStats | null>(null)
 const selectedIds = ref<number[]>([])
+const brands = ref<BrandItem[]>([])
+const suppliers = ref<SupplierItem[]>([])
 
 const formVisible = ref(false)
 const formMode = ref<'add' | 'edit'>('add')
@@ -700,7 +708,21 @@ async function submitImport() {
   }
 }
 
+async function loadOptions() {
+  try {
+    const [brandRes, supplierRes] = await Promise.all([
+      listBrands({ status: 1 }),
+      listSuppliers({ status: 1 }),
+    ])
+    if (brandRes.code === 0) brands.value = brandRes.data || []
+    if (supplierRes.code === 0) suppliers.value = supplierRes.data || []
+  } catch {
+    // 下拉选项加载失败不阻塞主流程
+  }
+}
+
 onMounted(() => {
+  loadOptions()
   loadData()
 })
 </script>

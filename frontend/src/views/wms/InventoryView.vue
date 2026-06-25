@@ -46,7 +46,14 @@
         <el-table-column prop="materialName" label="物料名称" min-width="150"><template #default="{ row }"><b>{{ row.materialName }}</b></template></el-table-column>
         <el-table-column prop="spec" label="规格型号" width="120" />
         <el-table-column prop="warehouseName" label="仓库" width="130" />
-        <el-table-column prop="locationCode" label="库位" width="120" />
+        <el-table-column label="库位" min-width="160">
+          <template #default="{ row }">
+            <div class="loc-cell">
+              <b>{{ row.locationCode }}</b>
+              <span v-if="row.locationName" class="loc-name">{{ row.locationName }}</span>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="batchNo" label="批次号" width="130" />
         <el-table-column prop="quantity" label="库存数量" width="100" align="right"><template #default="{ row }">{{ formatNumber(row.quantity) }}</template></el-table-column>
         <el-table-column prop="availableQty" label="可用" width="90" align="right"><template #default="{ row }">{{ formatNumber(row.availableQty) }}</template></el-table-column>
@@ -282,3 +289,15 @@ async function toggleStatus(row: InventoryItem, val: boolean) {
 
 onMounted(() => loadData())
 </script>
+
+<style scoped>
+.loc-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.loc-cell .loc-name {
+  font-size: 12px;
+  color: #909399;
+}
+</style>

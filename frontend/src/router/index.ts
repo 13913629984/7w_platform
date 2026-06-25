@@ -47,6 +47,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'wms/materials', component: () => import('@/views/wms/MaterialsView.vue'), meta: { title: '物料管理', service: 'wms' } },
       { path: 'wms/types', component: () => import('@/views/wms/TypesView.vue'), meta: { title: '类型管理', service: 'wms' } },
       { path: 'wms/brands', component: () => import('@/views/wms/BrandsView.vue'), meta: { title: '品牌管理', service: 'wms' } },
+      { path: 'wms/suppliers', component: () => import('@/views/wms/SuppliersView.vue'), meta: { title: '供应商管理', service: 'wms' } },
       { path: 'wms/warehouses', component: () => import('@/views/wms/WarehousesView.vue'), meta: { title: '仓库管理', service: 'wms' } },
       { path: 'wms/locations', component: () => import('@/views/wms/LocationsView.vue'), meta: { title: '库位管理', service: 'wms' } },
       { path: 'wms/inventory', component: () => import('@/views/wms/InventoryView.vue'), meta: { title: '库存管理', service: 'wms' } },

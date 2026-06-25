@@ -88,6 +88,7 @@ export const menus: AppMenu[] = [
       { path: '/wms/materials', title: '物料管理', icon: '📦' },
       { path: '/wms/types', title: '类型管理', icon: '🏷️' },
       { path: '/wms/brands', title: '品牌管理', icon: '🔖' },
+      { path: '/wms/suppliers', title: '供应商管理', icon: '🤝' },
       { path: '/wms/warehouses', title: '仓库管理', icon: '🏬' },
       { path: '/wms/locations', title: '库位管理', icon: '📍' },
       { path: '/wms/inventory', title: '库存管理', icon: '▦' },
