@@ -58,9 +58,23 @@ public class WorkspaceService {
         stats.put("profit", income.subtract(expense));
         stats.put("pendingReceipt", pendingReceipt);
 
+        // 待回款提醒：尚有待回款金额的应收，按到期日升序取前若干条
+        List<Map<String, Object>> receivableReminders = receivableMapper.selectList(new LambdaQueryWrapper<FinReceivable>()
+                        .gt(FinReceivable::getPending, BigDecimal.ZERO)
+                        .orderByAsc(FinReceivable::getDueDate)).stream()
+                .limit(5).map(this::receivableRow).toList();
+
+        // 待付款提醒：尚有待付款金额的应付，按到期日升序取前若干条
+        List<Map<String, Object>> payableReminders = payableMapper.selectList(new LambdaQueryWrapper<FinPayable>()
+                        .gt(FinPayable::getPending, BigDecimal.ZERO)
+                        .orderByAsc(FinPayable::getDueDate)).stream()
+                .limit(5).map(this::payableRow).toList();
+
         Map<String, Object> result = new HashMap<>();
         result.put("stats", stats);
         result.put("records", records.stream().limit(8).map(this::recordRow).toList());
+        result.put("receivableReminders", receivableReminders);
+        result.put("payableReminders", payableReminders);
         return result;
     }
 

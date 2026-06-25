@@ -27,6 +27,11 @@ public class CostController {
         return ApiResult.ok(costService.collections(keyword, costType));
     }
 
+    @GetMapping("/pending-payments")
+    public ApiResult<List<Map<String, Object>>> pendingPayments() {
+        return ApiResult.ok(costService.pendingPayments());
+    }
+
     @GetMapping("/allocations")
     public ApiResult<List<Map<String, Object>>> allocations(@RequestParam(required = false) String keyword,
                                                              @RequestParam(required = false) String costType) {

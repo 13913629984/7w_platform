@@ -3,8 +3,10 @@ package com.qws.fin;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qws.common.entity.FinCostAllocation;
 import com.qws.common.entity.FinCostCollection;
+import com.qws.common.entity.FinPayment;
 import com.qws.common.mapper.FinCostAllocationMapper;
 import com.qws.common.mapper.FinCostCollectionMapper;
+import com.qws.common.mapper.FinPaymentMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -36,10 +38,39 @@ public class CostService {
 
     private final FinCostCollectionMapper collectionMapper;
     private final FinCostAllocationMapper allocationMapper;
+    private final FinPaymentMapper paymentMapper;
 
-    public CostService(FinCostCollectionMapper collectionMapper, FinCostAllocationMapper allocationMapper) {
+    public CostService(FinCostCollectionMapper collectionMapper, FinCostAllocationMapper allocationMapper, FinPaymentMapper paymentMapper) {
         this.collectionMapper = collectionMapper;
         this.allocationMapper = allocationMapper;
+        this.paymentMapper = paymentMapper;
+    }
+
+    /**
+     * 待归集成本的付款单：采购付款类、已审批通过或已付款、且尚未生成成本归集单的付款记录。
+     */
+    public List<Map<String, Object>> pendingPayments() {
+        List<FinPayment> payments = paymentMapper.selectList(new LambdaQueryWrapper<FinPayment>()
+                .eq(FinPayment::getType, "采购付款")
+                .in(FinPayment::getStatus, "已付款", "已通过")
+                .orderByDesc(FinPayment::getCreateTime).orderByDesc(FinPayment::getId));
+        // 已经归集过的付款单（成本来源记录了付款单号）不再展示
+        java.util.Set<String> collectedCodes = collectionMapper.selectList(null).stream()
+                .map(c -> text(c.getSource()))
+                .filter(StringUtils::hasText)
+                .collect(java.util.stream.Collectors.toSet());
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (FinPayment p : payments) {
+            if (collectedCodes.contains(text(p.getCode()))) continue;
+            Map<String, Object> row = new HashMap<>();
+            row.put("id", p.getId());
+            row.put("code", p.getCode());
+            row.put("apCode", p.getApCode());
+            row.put("supplier", p.getPayee());
+            row.put("amount", p.getAmount());
+            rows.add(row);
+        }
+        return rows;
     }
 
     public List<Map<String, Object>> collections(String keyword, String costType) {

@@ -21,6 +21,28 @@ export interface WorkspaceStats {
 export interface WorkspaceData {
   stats: WorkspaceStats
   records: FinFlowRecord[]
+  receivableReminders: ReceivableReminder[]
+  payableReminders: PayableReminder[]
+}
+
+export interface ReceivableReminder {
+  id?: number
+  customer: string
+  contractAmount: number
+  received: number
+  pending: number
+  dueDate: string
+  status: string
+}
+
+export interface PayableReminder {
+  id?: number
+  supplier: string
+  purchaseOrder: string
+  payableAmount: number
+  pending: number
+  dueDate: string
+  status: string
 }
 
 export function getWorkspace() {

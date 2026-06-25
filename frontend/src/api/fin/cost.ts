@@ -39,8 +39,20 @@ export interface CostCharts {
   distribution: CostDistributionItem[]
 }
 
+export interface PendingPayment {
+  id?: number
+  code: string
+  apCode: string
+  supplier: string
+  amount: number
+}
+
 export function listCollections(params: { keyword?: string; costType?: string } = {}) {
   return unwrap<CostCollection[]>(request.get('/fin/cost/collections', { params }))
+}
+
+export function listPendingPayments() {
+  return unwrap<PendingPayment[]>(request.get('/fin/cost/pending-payments'))
 }
 
 export function listAllocations(params: { keyword?: string; costType?: string } = {}) {

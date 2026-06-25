@@ -175,6 +175,7 @@ import { ElMessage } from 'element-plus'
 import {
   listCollections,
   listAllocations,
+  listPendingPayments,
   costStats,
   costCharts,
   type CostAllocation,
@@ -210,10 +211,7 @@ const statCards = computed(() => [
 
 const costTypeOptions = ['原材料', '设备采购', '运输费', '制造费用', '管理费用']
 
-const pendingPayments = ref([
-  { code: 'PAY20260528001', apCode: 'AP20260526001', supplier: '宁波CC塑胶', amount: 39776, costType: '原材料' },
-  { code: 'PAY20260528002', apCode: 'AP20260528001', supplier: '上海芯片公司', amount: 9605, costType: '原材料' },
-])
+const pendingPayments = ref<{ id?: number; code: string; apCode: string; supplier: string; amount: number; costType: string }[]>([])
 
 // 月度成本趋势 (单位: 万)
 const trendData = [
@@ -227,11 +225,12 @@ const trendData = [
 
 async function loadAll() {
   try {
-    const [cols, allocs, st, charts] = await Promise.all([
+    const [cols, allocs, st, charts, pending] = await Promise.all([
       listCollections(),
       listAllocations(),
       costStats(),
       costCharts(),
+      listPendingPayments(),
     ])
     collections.value = cols.map((c) => ({
       id: c.id,
@@ -246,6 +245,14 @@ async function loadAll() {
     allocations.value = allocs
     stats.value = st
     distribution.value = charts.distribution
+    pendingPayments.value = pending.map((p) => ({
+      id: p.id,
+      code: p.code,
+      apCode: p.apCode,
+      supplier: p.supplier,
+      amount: p.amount,
+      costType: '原材料',
+    }))
   } catch (e: any) {
     ElMessage.error(e.message || '加载失败')
   }

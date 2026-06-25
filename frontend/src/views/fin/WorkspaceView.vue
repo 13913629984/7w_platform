@@ -177,6 +177,21 @@ async function loadWorkspace() {
       status: r.status,
       date: r.date,
     }))
+    receivableReminders.value = (data.receivableReminders || []).map((r) => ({
+      customer: r.customer,
+      contractAmount: r.contractAmount,
+      received: r.received,
+      pending: r.pending,
+      dueDate: r.dueDate,
+      status: r.status,
+    }))
+    payableReminders.value = (data.payableReminders || []).map((p) => ({
+      supplier: p.supplier,
+      purchaseOrder: p.purchaseOrder,
+      payable: p.payableAmount,
+      dueDate: p.dueDate,
+      status: p.status,
+    }))
   } catch (e: any) {
     ElMessage.error(e.message || '加载失败')
   }
@@ -215,17 +230,8 @@ const income = [
   { name: '其他收入', value: 185 },
 ]
 
-const receivableReminders = [
-  { customer: '深圳XX科技有限公司', contractAmount: 280000, received: 196000, pending: 84000, dueDate: '2026-06-05', status: '即将到期' },
-  { customer: '广州YY电子股份', contractAmount: 156000, received: 78000, pending: 78000, dueDate: '2026-06-15', status: '部分回款' },
-  { customer: '上海ZZ精密制造', contractAmount: 320000, received: 0, pending: 320000, dueDate: '2026-06-20', status: '待回款' },
-]
-
-const payableReminders = [
-  { supplier: '深圳XX电子元件', purchaseOrder: 'PO-2026-0515', payable: 45600, dueDate: '2026-06-02', status: '即将到期' },
-  { supplier: '东莞YY五金', purchaseOrder: 'PO-2026-0518', payable: 18300, dueDate: '2026-06-10', status: '待付款' },
-  { supplier: '苏州ZZ原材料', purchaseOrder: 'PO-2026-0520', payable: 62800, dueDate: '2026-06-18', status: '待付款' },
-]
+const receivableReminders = ref<{ customer: string; contractAmount: number; received: number; pending: number; dueDate: string; status: string }[]>([])
+const payableReminders = ref<{ supplier: string; purchaseOrder: string; payable: number; dueDate: string; status: string }[]>([])
 
 const trendData = computed(() => (trendRange.value === '6' ? trend6 : trend12))
 
