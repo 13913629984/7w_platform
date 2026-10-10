@@ -1,0 +1,77 @@
+{
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/dashboard/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "工作台"
+      }
+    },
+    {
+      "path": "pages/crm/customers",
+      "style": {
+        "navigationBarTitleText": "客户管理"
+      }
+    },
+    {
+      "path": "pages/crm/customer-detail",
+      "style": {
+        "navigationBarTitleText": "客户详情"
+      }
+    },
+    {
+      "path": "pages/wms/overview",
+      "style": {
+        "navigationBarTitleText": "库存概览"
+      }
+    },
+    {
+      "path": "pages/mine/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/crm/visits",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "拜访管理"
+      }
+    },
+    {
+      "path": "pages/crm/opportunities",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "商机管理"
+      }
+    },
+    {
+      "path": "pages/crm/quotes",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "报价管理"
+      }
+    },
+    {
+      "path": "pages/crm/dashboard",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "CRM 看板"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "七维空间",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f5f7fa"
+  }
+}

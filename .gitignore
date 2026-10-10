@@ -6,6 +6,11 @@ frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 
+# Mobile (uni-app) dependencies and build output
+mobile/node_modules/
+mobile/dist/
+mobile/.vite/
+
 # IDE/editor files
 .vscode/
 *.iml

@@ -1,0 +1,57 @@
+$primary-color: #409eff;
+$primary-light: #ecf5ff;
+$primary-dark: #337ecc;
+
+$success-color: #67c23a;
+$success-light: #f0f9eb;
+$warning-color: #e6a23c;
+$warning-light: #fdf6ec;
+$danger-color: #f56c6c;
+$danger-light: #fef0f0;
+$info-color: #909399;
+$info-light: #f4f4f5;
+
+$text-primary: #303133;
+$text-regular: #606266;
+$text-secondary: #909399;
+$text-placeholder: #c0c4cc;
+
+$bg-page: #f5f7fa;
+$bg-card: #ffffff;
+$bg-hover: #f5f7fa;
+$bg-mask: rgba(0, 0, 0, 0.5);
+
+$border-color: #ebeef5;
+$border-color-light: #f2f6fc;
+
+$border-radius-sm: 8rpx;
+$border-radius-md: 16rpx;
+$border-radius-lg: 24rpx;
+$border-radius-xl: 32rpx;
+
+$shadow-sm: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+
+$spacing-xs: 8rpx;
+$spacing-sm: 16rpx;
+$spacing-md: 24rpx;
+$spacing-lg: 32rpx;
+$spacing-xl: 48rpx;
+
+$font-size-xs: 20rpx;
+$font-size-sm: 24rpx;
+$font-size-base: 28rpx;
+$font-size-md: 32rpx;
+$font-size-lg: 36rpx;
+$font-size-xl: 40rpx;
+$font-size-xxl: 48rpx;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+$status-bar-height: var(--status-bar-height, 44px);
+$nav-bar-height: 88rpx;
+$tab-bar-height: 100rpx;
