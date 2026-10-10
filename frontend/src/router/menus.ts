@@ -98,6 +98,7 @@ export const menus: AppMenu[] = [
       { path: '/wms/warnings', title: '库存预警', icon: '⚠️' },
       { path: '/wms/purchase-demands', title: '采购需求', icon: '📝' },
       { path: '/wms/purchase-orders', title: '采购订单', icon: '🛍️' },
+      { path: '/wms/bom', title: '产品BOM树', icon: '🌳' },
     ],
   },
 ]

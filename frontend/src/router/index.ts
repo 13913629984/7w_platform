@@ -57,6 +57,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'wms/warnings', component: () => import('@/views/wms/WarningsView.vue'), meta: { title: '库存预警', service: 'wms' } },
       { path: 'wms/purchase-demands', component: () => import('@/views/wms/PurchaseDemandsView.vue'), meta: { title: '采购需求', service: 'wms' } },
       { path: 'wms/purchase-orders', component: () => import('@/views/wms/PurchaseOrdersView.vue'), meta: { title: '采购订单', service: 'wms' } },
+      { path: 'wms/bom', component: () => import('@/views/wms/BomView.vue'), meta: { title: '产品BOM树', service: 'wms' } },
     ],
   },
 ]
