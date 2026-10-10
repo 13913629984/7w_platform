@@ -5,6 +5,7 @@ import com.qws.common.entity.Inventory;
 import com.qws.common.entity.Material;
 import com.qws.common.entity.StockWarning;
 import com.qws.common.entity.Warehouse;
+import com.qws.common.entity.WarningRule;
 import com.qws.common.mapper.InventoryMapper;
 import com.qws.common.mapper.MaterialMapper;
 import com.qws.common.mapper.StockWarningMapper;
@@ -33,13 +34,16 @@ public class WarningService {
     private final InventoryMapper inventoryMapper;
     private final MaterialMapper materialMapper;
     private final WarehouseMapper warehouseMapper;
+    private final WarningRuleService warningRuleService;
 
     public WarningService(StockWarningMapper warningMapper, InventoryMapper inventoryMapper,
-                          MaterialMapper materialMapper, WarehouseMapper warehouseMapper) {
+                          MaterialMapper materialMapper, WarehouseMapper warehouseMapper,
+                          WarningRuleService warningRuleService) {
         this.warningMapper = warningMapper;
         this.inventoryMapper = inventoryMapper;
         this.materialMapper = materialMapper;
         this.warehouseMapper = warehouseMapper;
+        this.warningRuleService = warningRuleService;
     }
 
     public List<Map<String, Object>> list(String keyword, String level, String status) {
@@ -86,6 +90,7 @@ public class WarningService {
     public Map<String, Object> scan() {
         LocalDateTime now = LocalDateTime.now();
         List<Aggregate> aggregates = aggregateInventory();
+        List<WarningRule> rules = warningRuleService.enabledRules();
 
         int created = 0;
         int updated = 0;
@@ -93,7 +98,10 @@ public class WarningService {
         List<Long> activeWarningIds = new ArrayList<>();
 
         for (Aggregate agg : aggregates) {
-            String level = calcLevel(agg.totalQty, agg.safeStock);
+            // 优先命中物料级 / 全局预警规则，未命中时回退到库存安全库存
+            WarningRule rule = warningRuleService.matchRule(rules, agg.materialId, agg.warehouseCode);
+            Thresholds thresholds = thresholdsOf(agg.safeStock, rule);
+            String level = calcLevel(agg.totalQty, thresholds);
             if (level == null) continue;
 
             StockWarning existing = warningMapper.selectOne(new LambdaQueryWrapper<StockWarning>()
@@ -104,7 +112,9 @@ public class WarningService {
                 warning.setMaterialId(agg.materialId);
                 warning.setWarehouseCode(agg.warehouseCode);
                 warning.setCurrentQty(agg.totalQty);
-                warning.setThreshold(agg.safeStock);
+                warning.setThreshold(thresholds.low());
+                warning.setRuleId(rule == null ? null : rule.getId());
+                warning.setRuleName(rule == null ? null : rule.getName());
                 warning.setLevel(level);
                 warning.setStatus("pending");
                 warning.setWarningTime(now);
@@ -118,7 +128,9 @@ public class WarningService {
                 // 库存仍处于预警区间：刷新数值/级别。已处理且仍预警的，重新置为待处理。
                 String newStatus = "resolved".equals(currentStatus) ? "pending" : currentStatus;
                 existing.setCurrentQty(agg.totalQty);
-                existing.setThreshold(agg.safeStock);
+                existing.setThreshold(thresholds.low());
+                existing.setRuleId(rule == null ? null : rule.getId());
+                existing.setRuleName(rule == null ? null : rule.getName());
                 existing.setLevel(level);
                 existing.setStatus(newStatus);
                 existing.setWarningTime(now);
@@ -222,14 +234,25 @@ public class WarningService {
                 .collect(Collectors.toMap(Warehouse::getCode, Function.identity(), (a, b) -> a));
     }
 
-    private String calcLevel(BigDecimal totalQty, int safeStock) {
+    /** 命中规则时使用规则阈值，否则按安全库存推导（高危=0，中危=安全库存/2，低危=安全库存）。 */
+    private Thresholds thresholdsOf(int safeStock, WarningRule rule) {
+        if (rule != null) {
+            return new Thresholds(nvl(rule.getLowThreshold()), nvl(rule.getMediumThreshold()), nvl(rule.getHighThreshold()));
+        }
+        return new Thresholds(safeStock, safeStock / 2, 0);
+    }
+
+    private String calcLevel(BigDecimal totalQty, Thresholds thresholds) {
+        if (totalQty == null) return null;
         if (totalQty.signum() <= 0) return "high";
-        if (safeStock <= 0) return null;
-        BigDecimal safe = BigDecimal.valueOf(safeStock);
-        if (totalQty.compareTo(safe) >= 0) return null;
-        // 库存低于安全库存的一半视为中危，否则低危
-        if (totalQty.multiply(BigDecimal.valueOf(2)).compareTo(safe) < 0) return "medium";
-        return "low";
+        if (thresholds.high() > 0 && totalQty.compareTo(BigDecimal.valueOf(thresholds.high())) <= 0) return "high";
+        if (thresholds.medium() > 0 && totalQty.compareTo(BigDecimal.valueOf(thresholds.medium())) <= 0) return "medium";
+        if (thresholds.low() > 0 && totalQty.compareTo(BigDecimal.valueOf(thresholds.low())) <= 0) return "low";
+        return null;
+    }
+
+    private int nvl(Integer value) {
+        return value == null ? 0 : value;
     }
 
     private Map<String, Object> row(StockWarning warning, Material material, Warehouse warehouse) {
@@ -244,6 +267,8 @@ public class WarningService {
         result.put("warehouse", warehouse != null ? warehouse.getName() : warning.getWarehouseCode());
         result.put("currentQty", warning.getCurrentQty());
         result.put("threshold", warning.getThreshold());
+        result.put("ruleId", warning.getRuleId());
+        result.put("ruleName", warning.getRuleName());
         result.put("level", warning.getLevel());
         result.put("levelName", levelName(text(warning.getLevel())));
         result.put("status", warning.getStatus());
@@ -300,4 +325,7 @@ public class WarningService {
         BigDecimal totalQty;
         int safeStock;
     }
+
+    /** 预警阈值区间：high ≤ medium ≤ low。 */
+    private record Thresholds(int low, int medium, int high) {}
 }

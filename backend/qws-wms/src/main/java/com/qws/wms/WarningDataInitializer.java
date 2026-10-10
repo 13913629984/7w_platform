@@ -37,5 +37,18 @@ public class WarningDataInitializer {
                     INDEX idx_warning_time (warning_time)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
                 """);
+        ensureColumn("rule_id", "rule_id BIGINT NULL");
+        ensureColumn("rule_name", "rule_name VARCHAR(100) NULL");
+    }
+
+    /** 为已存在的表补充新增列（幂等）。 */
+    private void ensureColumn(String column, String definition) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns "
+                        + "WHERE table_schema = DATABASE() AND table_name = 'wms_stock_warning' AND column_name = ?",
+                Integer.class, column);
+        if (count == null || count == 0) {
+            jdbcTemplate.execute("ALTER TABLE wms_stock_warning ADD COLUMN " + definition);
+        }
     }
 }

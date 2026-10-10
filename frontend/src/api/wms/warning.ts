@@ -14,6 +14,8 @@ export interface WarningItem {
   warehouse?: string
   currentQty: number
   threshold: number
+  ruleId?: number | null
+  ruleName?: string | null
   level: WarningLevel
   levelName?: string
   status: WarningStatus

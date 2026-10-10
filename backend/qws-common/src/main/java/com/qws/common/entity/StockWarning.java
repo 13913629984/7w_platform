@@ -19,6 +19,10 @@ public class StockWarning {
     @TableField("current_qty")
     private BigDecimal currentQty;
     private Integer threshold;
+    @TableField("rule_id")
+    private Long ruleId;
+    @TableField("rule_name")
+    private String ruleName;
     private String level;
     private String status;
     private String handler;
@@ -43,6 +47,10 @@ public class StockWarning {
     public void setCurrentQty(BigDecimal currentQty) { this.currentQty = currentQty; }
     public Integer getThreshold() { return threshold; }
     public void setThreshold(Integer threshold) { this.threshold = threshold; }
+    public Long getRuleId() { return ruleId; }
+    public void setRuleId(Long ruleId) { this.ruleId = ruleId; }
+    public String getRuleName() { return ruleName; }
+    public void setRuleName(String ruleName) { this.ruleName = ruleName; }
     public String getLevel() { return level; }
     public void setLevel(String level) { this.level = level; }
     public String getStatus() { return status; }
