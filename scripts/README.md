@@ -1,4 +1,21 @@
-# QWS 单服务启动脚本
+# QWS 启动脚本
+
+## 一键启动
+
+双击 `start-all.bat`，或在 PowerShell 中运行：
+
+```powershell
+.\start-all.ps1
+```
+
+脚本按 Nacos -> 后端服务 -> 网关 -> 前端的顺序启动，已运行的服务会自动跳过。可选参数：
+
+```powershell
+.\start-all.ps1 -SkipNacos -SkipFrontend
+.\start-all.ps1 -TimeoutSeconds 120
+```
+
+## 单服务启动脚本
 
 这些脚本用于手动分别启动每个服务。Windows 下可直接双击 `.bat`，或在 PowerShell 中运行 `.ps1`。
 所有服务用 `java -jar <service>-1.0.0-SNAPSHOT.jar` 启动，jar 由 `mvn -pl <service> -am package -DskipTests` 产出。
@@ -16,8 +33,9 @@
 3. `start-system.bat` / `start-system.ps1`（系统管理，8091）
 4. `start-crm.bat` / `start-crm.ps1`（CRM，8092）
 5. `start-wms.bat` / `start-wms.ps1`（WMS，8093）
-6. `start-gateway.bat` / `start-gateway.ps1`（网关，8080）
-7. `start-frontend.bat` / `start-frontend.ps1`（前端，3000）
+6. `start-fin.bat` / `start-fin.ps1`（Finance，8094）
+7. `start-gateway.bat` / `start-gateway.ps1`（网关，8080）
+8. `start-frontend.bat` / `start-frontend.ps1`（前端，4000）
 
 ## 端口
 
