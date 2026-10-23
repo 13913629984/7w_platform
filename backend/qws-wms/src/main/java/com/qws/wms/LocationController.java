@@ -1,6 +1,7 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.location.LocationDeleteRequest;
 import com.qws.common.dto.location.LocationRequest;
 import com.qws.common.dto.location.LocationStatusRequest;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 
+@RequirePermission("WMS")
 @RestController
 @RequestMapping("/wms/location")
 public class LocationController {

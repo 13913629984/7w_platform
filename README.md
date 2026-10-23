@@ -5,8 +5,8 @@
 - 前端：Vue 3 + TypeScript + Vite + Pinia + Vue Router + Element Plus
 - 后端：Spring Boot 3 + Spring Cloud Gateway + MyBatis Plus
 - 登录：统一认证服务 `qws-auth` 签发 JWT，前端通过网关统一访问
-- 已启用子系统：系统管理、CRM、WMS
-- 预留子系统：ETS、Finance、Maint，可按同样模式扩展微服务
+- 已启用子系统：系统管理、CRM、WMS、财务、维保、电气测试
+- 网关统一校验 JWT，校验通过后向下游注入 `X-User-Id` / `X-Username` / `X-User-Roles` / `X-User-Permissions`
 
 ## 目录结构
 
@@ -19,6 +19,9 @@ backend/                  后端 Maven 多模块
   qws-system/             系统管理微服务 8091
   qws-crm/                CRM 微服务 8092
   qws-wms/                WMS 微服务 8093
+  qws-fin/                财务微服务 8094
+  qws-maint/              维保微服务 8095
+  qws-ets/                电气测试微服务 8096
 system/ crm/ wms/ ...     原 HTML 原型文件
 ```
 
@@ -62,6 +65,9 @@ mvn -pl qws-gateway spring-boot:run
 - 系统管理：`http://localhost:8091/system`
 - CRM：`http://localhost:8092/crm`
 - WMS：`http://localhost:8093/wms`
+- 财务：`http://localhost:8094/fin`
+- 维保：`http://localhost:8095/maint`
+- 电气测试：`http://localhost:8096/ets`
 
 ## 启动前端
 

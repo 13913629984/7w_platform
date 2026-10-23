@@ -1,6 +1,7 @@
 package com.qws.fin;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -12,6 +13,7 @@ import java.util.Map;
 /**
  * 财务工作台、应收应付总览、业务流程三个聚合视图的只读接口。
  */
+@RequirePermission("FIN")
 @RestController
 @RequestMapping("/fin")
 public class WorkspaceController {

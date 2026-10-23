@@ -1,12 +1,14 @@
 package com.qws.system;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.*;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@RequirePermission("SYS")
 @RestController
 @RequestMapping("/system/user")
 public class UserController {

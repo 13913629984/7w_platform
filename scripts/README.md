@@ -34,8 +34,10 @@
 4. `start-crm.bat` / `start-crm.ps1`（CRM，8092）
 5. `start-wms.bat` / `start-wms.ps1`（WMS，8093）
 6. `start-fin.bat` / `start-fin.ps1`（Finance，8094）
-7. `start-gateway.bat` / `start-gateway.ps1`（网关，8080）
-8. `start-frontend.bat` / `start-frontend.ps1`（前端，4000）
+7. `start-maint.bat` / `start-maint.ps1`（维保，8095）
+8. `start-ets.bat` / `start-ets.ps1`（电气测试，8096）
+9. `start-gateway.bat` / `start-gateway.ps1`（网关，8080）
+10. `start-frontend.bat` / `start-frontend.ps1`（前端，4000）
 
 ## 端口
 
@@ -45,8 +47,11 @@
 | qws-system | 8091 | `com.qws.system.SystemApplication`  |
 | qws-crm    | 8092 | `com.qws.crm.CrmApplication`        |
 | qws-wms    | 8093 | `com.qws.wms.WmsApplication`        |
+| qws-fin    | 8094 | `com.qws.fin.FinApplication`        |
+| qws-maint  | 8095 | `com.qws.maint.MaintApplication`    |
+| qws-ets    | 8096 | `com.qws.ets.EtsApplication`        |
 | qws-gateway| 8080 | `com.qws.gateway.GatewayApplication`|
-| frontend   | 3000 | Vite dev server                     |
+| frontend   | 4000 | Vite dev server                     |
 | nacos      | 8848 | Nacos standalone                     |
 
 ## 常见操作

@@ -1,6 +1,7 @@
 package com.qws.fin;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 
+@RequirePermission("FIN")
 @RestController
 @RequestMapping("/fin/payable")
 public class PayableController {

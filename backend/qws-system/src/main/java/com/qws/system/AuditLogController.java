@@ -1,11 +1,13 @@
 package com.qws.system;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.audit.AuditLogCreateRequest;
 import com.qws.common.dto.audit.AuditLogListResult;
 import com.qws.common.dto.audit.AuditLogVO;
 import org.springframework.web.bind.annotation.*;
 
+@RequirePermission("SYS")
 @RestController
 @RequestMapping("/system/audit")
 public class AuditLogController {

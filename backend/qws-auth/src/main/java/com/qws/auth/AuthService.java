@@ -68,7 +68,9 @@ public class AuthService {
         String token = Jwts.builder()
                 .subject(user.getUsername())
                 .claim("userId", user.getId())
+                .claim("username", user.getUsername())
                 .claim("roles", roles)
+                .claim("permissions", permissions)
                 .issuedAt(new Date())
                 .expiration(Date.from(Instant.now().plusSeconds(7200)))
                 .signWith(secretKey)
@@ -113,7 +115,21 @@ public class AuthService {
         List<String> roles = sysUserRoleMapper.selectList(
                 new LambdaQueryWrapper<SysUserRole>().eq(SysUserRole::getUserId, userId)
         ).stream().map(SysUserRole::getRoleCode).distinct().toList();
-        return roles.isEmpty() ? List.of("SUPER_ADMIN") : roles;
+        if (!roles.isEmpty()) {
+            return roles;
+        }
+        // 未配置角色的用户回退到 sys_user.role 字段（历史数据逗号分隔）；
+        // 绝不默认授予 SUPER_ADMIN —— 否则任何新建用户都会变成超管。
+        SysUser user = sysUserMapper.selectById(userId);
+        String legacy = user == null ? null : user.getRole();
+        if (legacy == null || legacy.isBlank()) {
+            return Collections.emptyList();
+        }
+        return java.util.Arrays.stream(legacy.split("[,，]"))
+                .map(String::trim)
+                .filter(code -> !code.isEmpty())
+                .distinct()
+                .toList();
     }
 
     private List<String> permissionCodes(List<String> roles) {
@@ -130,7 +146,9 @@ public class AuthService {
                 .filter(code -> code != null && !code.isBlank())
                 .distinct()
                 .collect(Collectors.toList());
-        return permissions.isEmpty() ? allSubsystemPermissions() : permissions;
+        // 角色没有配置任何权限时返回空集合（默认拒绝），
+        // 不能回退成“全部子系统权限”，否则配错角色会静默变成全权限。
+        return permissions;
     }
 
     private List<String> allSubsystemPermissions() {

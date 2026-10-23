@@ -96,19 +96,20 @@ export const useAuthStore = defineStore('auth', {
       try {
         const { data } = await request.post('/auth/login', form)
         const result = data.data || data
-        this.token = result.accessToken || 'dev-token'
+        if (!result?.accessToken) {
+          throw new Error(data.message || '登录失败：未获取到访问令牌')
+        }
+        this.token = result.accessToken
         this.username = result.username || form.username
         this.nickname = result.nickname || form.username
         this.roles = result.roles || []
         this.permissions = normalizePermissions(result.permissions || [], this.roles)
         this.profileLoaded = true
-      } catch {
-        this.token = 'dev-token'
-        this.username = form.username
-        this.nickname = '系统管理员'
-        this.roles = ['SUPER_ADMIN']
-        this.permissions = adminPermissions
-        this.profileLoaded = true
+      } catch (error: any) {
+        // 登录失败必须向上抛出，由登录页提示；不能静默降级为管理员
+        this.token = ''
+        this.profileLoaded = false
+        throw new Error(error?.response?.data?.message || error?.message || '登录失败，请检查用户名或密码')
       }
       this.persistAuth()
     },

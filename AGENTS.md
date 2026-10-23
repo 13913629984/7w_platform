@@ -9,7 +9,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 - **Frontend**: Vue 3 + TypeScript + Vite 6 + Pinia + Vue Router 4 + Element Plus
 - **Backend**: Spring Boot 3.3 + Spring Cloud Gateway 2023.0 + MyBatis Plus 3.5 + Nacos Discovery
 - **Auth**: JWT-based (jjwt 0.12), unified auth service `qws-auth`
-- **Database**: MySQL (auth/system modules), H2 in-memory (crm/wms stubs)
+- **Database**: MySQL, single schema `7wsys`; tables are created idempotently by each module's `*DataInitializer` (`@PostConstruct` + JdbcTemplate `CREATE TABLE IF NOT EXISTS` + seed) — no Flyway/Liquibase
 - **Default login**: admin / 123456
 
 ## Directory Structure
@@ -37,21 +37,25 @@ backend/                Maven multi-module (JDK 17)
   qws-gateway/          Spring Cloud Gateway (port 8080), routes to /api/auth/** /api/system/** /api/crm/** /api/wms/**
   qws-auth/             Auth service (port 8090), JWT login + profile, Nacos discovery
   qws-system/           System management (port 8091), CRUD for users/orgs/roles/permissions/audit logs
-  qws-crm/              CRM stub (port 8092), H2, generic REST endpoints
-  qws-wms/              WMS stub (port 8093), H2, generic REST endpoints
+  qws-crm/              CRM (port 8092): customer/contact/deal/quote/order/lead/activity
+  qws-wms/              WMS (port 8093): 24 tables, materials/inventory/inbound/outbound/stocktaking/warning/purchase/BOM
+  qws-fin/              Finance (port 8094): receivable/payable/payment/expense/budget/cost/business-flow
+  qws-maint/            Maintenance (port 8095): equipment/work-order/plan/spare-part
+  qws-ets/              Electrical testing (port 8096): register/test/report
 scripts/                Per-service start scripts (.bat + .ps1) using mvn spring-boot:run
 ```
 
 ## Architecture
 
 - **Frontend → Gateway**: All API calls go through Vite proxy (`/api` → `localhost:8080`) to Spring Cloud Gateway
-- **Gateway routes**: `/api/auth/**` → `qws-auth:8090`, `/api/system/**` → `qws-system:8091`, `/api/crm/**` → `qws-crm:8092`, `/api/wms/**` → `qws-wms:8093`
+- **Gateway routes**: `/api/{auth,system,crm,wms,fin,maint,ets}/**` → corresponding service with `StripPrefix=1`
+- **Gateway auth**: `JwtAuthFilter` (GlobalFilter, JJWT) validates the Bearer token and injects `X-User-Id` / `X-Username` / `X-User-Roles` / `X-User-Permissions` downstream. Whitelist: `/api/auth/login`, `/api/auth/profile`, `/actuator/**`. Gateway is reactive — do NOT use servlet `OncePerRequestFilter`.
 - **Auth flow**: JWT issued by `qws-auth`, stored in localStorage, sent as `Authorization: Bearer <token>` via Axios interceptor
 - **Auth guard**: Vue Router `beforeEach` checks token + fetches profile + validates `route.meta.service` permission
 - **Mock mode**: Set `VITE_USE_MOCK=true` to bypass backend auth (dev convenience)
 - **Permission model**: Role-based with subsystem codes (`SYS`, `CRM`, `WMS`, `MAINT`, `ETS`, `FIN`); admin roles (`ADMIN`, `SUPER_ADMIN`, `SYS_ADMIN`) auto-grant all
 - **API convention**: Unified response wrapper `ApiResult<T>(code, message, data)` — `code: 0` = success
-- **CRUD stubs**: CRM and WMS services use generic `GET /{resource}` / `POST /{resource}` endpoints returning mock data; System services have real MyBatis-based CRUD
+- **Service pattern**: every list endpoint returns `{rows,total,page,pageSize,stats}` and paginates server-side via MyBatis-Plus `selectPage`; writes use POST `/create` `/update` `/delete` (no PUT/DELETE verbs)
 - **Entities**: Defined in `qws-common` with MyBatis Plus mappers — `SysUser`, `SysRole`, `SysPermission`, `SysDepartment`, `SysEmployee`, `SysAuditLog`, `SysUserRole`, `SysRolePermission`
 - **PageQuery**: Shared pagination record with `current()` / `size()` helpers
 
@@ -75,6 +79,9 @@ mvn -pl qws-auth -am spring-boot:run  # 8090
 mvn -pl qws-system -am spring-boot:run  # 8091
 mvn -pl qws-crm -am spring-boot:run  # 8092
 mvn -pl qws-wms -am spring-boot:run  # 8093
+mvn -pl qws-fin -am spring-boot:run  # 8094
+mvn -pl qws-maint -am spring-boot:run  # 8095
+mvn -pl qws-ets -am spring-boot:run  # 8096
 mvn -pl qws-gateway -am spring-boot:run  # 8080 (start last)
 ```
 
@@ -83,7 +90,7 @@ mvn -pl qws-gateway -am spring-boot:run  # 8080 (start last)
 ```powershell
 cd frontend
 npm install
-npm run dev        # Dev server on http://localhost:3000
+npm run dev        # Dev server on http://localhost:4000
 npm run build      # Production build (vue-tsc -b && vite build)
 npm run preview    # Preview production build
 ```
@@ -97,8 +104,11 @@ scripts/start-auth.bat        # Auth service 8090
 scripts/start-system.bat      # System management 8091
 scripts/start-crm.bat         # CRM 8092
 scripts/start-wms.bat         # WMS 8093
+scripts/start-fin.bat         # Finance 8094
+scripts/start-maint.bat       # Maintenance 8095
+scripts/start-ets.bat         # ETS 8096
 scripts/start-gateway.bat     # Gateway 8080
-scripts/start-frontend.bat    # Frontend dev server 3000
+scripts/start-frontend.bat    # Frontend dev server 4000
 ```
 
 ## Key Patterns

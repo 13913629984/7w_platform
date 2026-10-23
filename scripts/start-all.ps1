@@ -119,6 +119,8 @@ $services = @(
     @{ Name = 'qws-crm';     Port = 8092; Script = 'start-crm.ps1' },
     @{ Name = 'qws-wms';     Port = 8093; Script = 'start-wms.ps1' },
     @{ Name = 'qws-fin';     Port = 8094; Script = 'start-fin.ps1' },
+    @{ Name = 'qws-maint';   Port = 8095; Script = 'start-maint.ps1' },
+    @{ Name = 'qws-ets';     Port = 8096; Script = 'start-ets.ps1' },
     @{ Name = 'qws-gateway'; Port = 8080; Script = 'start-gateway.ps1' }
 )
 

@@ -1,6 +1,7 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.bom.BomDeleteRequest;
 import com.qws.common.dto.bom.BomNodeMaterialRequest;
 import com.qws.common.dto.bom.BomNodeMaterialVO;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@RequirePermission("WMS")
 @RestController
 @RequestMapping("/wms/bom")
 public class BomController {

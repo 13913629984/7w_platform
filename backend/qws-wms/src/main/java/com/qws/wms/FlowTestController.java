@@ -1,5 +1,7 @@
 package com.qws.wms;
 
+import com.qws.common.security.RequirePermission;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qws.common.entity.*;
 import com.qws.common.mapper.*;
@@ -19,6 +21,7 @@ import java.util.Map;
  * 访问: http://localhost:8093/test/run-flow
  * 流程: 创建商机 → 创建订单 → 确认订单 → 生成出库单 → 执行出库 → 生成应收款 → 开票 → 回款核销 → 业务流水
  */
+@RequirePermission("WMS")
 @RestController
 @RequestMapping("/test")
 public class FlowTestController {

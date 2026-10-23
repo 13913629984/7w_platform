@@ -1,6 +1,7 @@
 package com.qws.crm;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.customer.CustomerBatchDeleteRequest;
 import com.qws.common.dto.customer.CustomerDeleteRequest;
 import com.qws.common.dto.customer.CustomerImportRequest;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@RequirePermission("CRM")
 @RestController
 @RequestMapping("/crm/customer")
 public class CustomerController {

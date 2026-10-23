@@ -1,6 +1,7 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.materialtype.MaterialTypeDeleteRequest;
 import com.qws.common.dto.materialtype.MaterialTypeRequest;
 import com.qws.common.dto.materialtype.MaterialTypeStatusRequest;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@RequirePermission("WMS")
 @RestController
 @RequestMapping("/wms/material-type")
 public class MaterialTypeController {

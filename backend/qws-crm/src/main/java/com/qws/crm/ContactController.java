@@ -1,6 +1,7 @@
 package com.qws.crm;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.contact.ContactBatchDeleteRequest;
 import com.qws.common.dto.contact.ContactDeleteRequest;
 import com.qws.common.dto.contact.ContactListResult;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 
+@RequirePermission("CRM")
 @RestController
 @RequestMapping("/crm/contact")
 public class ContactController {

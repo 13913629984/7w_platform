@@ -1,11 +1,13 @@
 package com.qws.crm;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.workspace.WorkspaceOverview;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@RequirePermission("CRM")
 @RestController
 @RequestMapping("/crm/workspace")
 public class WorkspaceController {

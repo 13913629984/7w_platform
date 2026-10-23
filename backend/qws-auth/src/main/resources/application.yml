@@ -26,3 +26,9 @@ mybatis-plus:
       id-type: auto
 jwt:
   secret: qws-platform-secret-key-for-jwt-demo-2026
+
+# 认证服务是网关之前的入口（/auth/login 在网关白名单内，不带内部签名），
+# 因此本服务不做内部签名校验，由网关对其它服务的调用负责。
+qws:
+  security:
+    require-signature: false

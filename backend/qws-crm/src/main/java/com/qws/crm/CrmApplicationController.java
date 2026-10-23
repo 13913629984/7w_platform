@@ -1,12 +1,14 @@
 package com.qws.crm;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+@RequirePermission("CRM")
 @RestController
 @RequestMapping("/crm")
 public class CrmApplicationController {

@@ -1,6 +1,7 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.material.MaterialBatchDeleteRequest;
 import com.qws.common.dto.material.MaterialDeleteRequest;
 import com.qws.common.dto.material.MaterialImportRequest;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@RequirePermission("WMS")
 @RestController
 @RequestMapping("/wms/material")
 public class MaterialController {

@@ -33,6 +33,8 @@ async function submit() {
     await auth.login(form)
     ElMessage.success('登录成功')
     router.push('/dashboard')
+  } catch (error: any) {
+    ElMessage.error(error?.message || '登录失败，请检查用户名或密码')
   } finally {
     loading.value = false
   }

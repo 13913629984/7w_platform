@@ -52,6 +52,18 @@ spring:
             - Path=/api/fin/**
           filters:
             - StripPrefix=1
+        - id: qws-maint
+          uri: lb://qws-maint
+          predicates:
+            - Path=/api/maint/**
+          filters:
+            - StripPrefix=1
+        - id: qws-ets
+          uri: lb://qws-ets
+          predicates:
+            - Path=/api/ets/**
+          filters:
+            - StripPrefix=1
 management:
   endpoint:
     gateway:
@@ -60,3 +72,9 @@ management:
     web:
       exposure:
         include: health,info,gateway
+
+jwt:
+  secret: qws-platform-secret-key-for-jwt-demo-2026
+  # 免鉴权路径，逗号分隔，支持 Ant 风格
+  whitelist: /api/auth/login,/api/auth/profile,/actuator/**
+

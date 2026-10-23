@@ -1,6 +1,7 @@
 package com.qws.system;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.UserVO;
 import com.qws.common.dto.role.PermissionVO;
 import com.qws.common.dto.role.RoleDeleteRequest;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 
+@RequirePermission("SYS")
 @RestController
 @RequestMapping("/system/role")
 public class RoleController {

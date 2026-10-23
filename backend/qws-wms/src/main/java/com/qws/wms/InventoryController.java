@@ -1,6 +1,7 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.inventory.InventoryDeleteRequest;
 import com.qws.common.dto.inventory.InventoryRequest;
 import com.qws.common.dto.inventory.InventoryStatusRequest;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 
+@RequirePermission("WMS")
 @RestController
 @RequestMapping("/wms/inventory")
 public class InventoryController {

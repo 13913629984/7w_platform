@@ -1,10 +1,12 @@
 package com.qws.system;
 
 import com.qws.common.ApiResult;
+import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.org.*;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.web.bind.annotation.*;
 
+@RequirePermission("SYS")
 @RestController
 @RequestMapping("/system/org")
 public class OrgController {
