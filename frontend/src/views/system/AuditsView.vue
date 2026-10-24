@@ -441,7 +441,7 @@ onMounted(() => {
 
 .empty-cell {
   height: 160px !important;
-  color: #909399 !important;
+  color: var(--pw-text-secondary) !important;
   text-align: center;
   cursor: default;
 }

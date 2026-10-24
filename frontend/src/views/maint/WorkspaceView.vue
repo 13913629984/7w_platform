@@ -201,19 +201,19 @@ onMounted(() => loadData())
 </script>
 
 <style scoped>
-.maint-hint { font-size: 12px; color: #909399; }
+.maint-hint { font-size: 12px; color: var(--pw-text-secondary); }
 .maint-trend-chart { height: 220px; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 14px; align-items: end; padding: 18px 12px 30px; background: linear-gradient(180deg, #fafcff 0%, #f7f9fc 100%); border-radius: 10px; position: relative; }
 .trend-day { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; }
 .trend-bars { flex: 1; display: flex; align-items: flex-end; gap: 7px; width: 100%; justify-content: center; }
 .trend-bar { width: 18px; border-radius: 8px 8px 0 0; display: inline-block; transition: height .3s; }
 .trend-bar.created { background: linear-gradient(180deg, #66b1ff, #409eff); }
 .trend-bar.finished { background: linear-gradient(180deg, #85ce61, #67c23a); }
-.trend-day em { position: absolute; bottom: -24px; font-style: normal; color: #909399; font-size: 12px; }
-.chart-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #c0c4cc; font-size: 13px; }
+.trend-day em { position: absolute; bottom: -24px; font-style: normal; color: var(--pw-text-secondary); font-size: 12px; }
+.chart-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--pw-text-secondary); font-size: 13px; }
 .maint-dist-bars { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
-.dist-row { display: flex; align-items: center; gap: 12px; font-size: 13px; color: #606266; }
+.dist-row { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--pw-text-regular); }
 .dist-label { width: 62px; flex-shrink: 0; }
-.dist-value { width: 36px; text-align: right; font-weight: 600; color: #303133; }
+.dist-value { width: 36px; text-align: right; font-weight: 600; color: var(--pw-text-primary); }
 .maint-progress { flex: 1; height: 8px; background: #ebeef5; border-radius: 999px; overflow: hidden; }
 .maint-progress span { display: block; height: 100%; border-radius: inherit; transition: width .3s; }
 

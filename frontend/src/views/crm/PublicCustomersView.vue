@@ -241,18 +241,18 @@ onMounted(() => {
   gap: 10px;
   flex-wrap: wrap;
 }
-.filter-label { font-size: 14px; color: #606266; white-space: nowrap; }
+.filter-label { font-size: 14px; color: var(--pw-text-regular); white-space: nowrap; }
 .crm-pagination {
   display: flex;
   justify-content: flex-end;
   padding: 16px 0 4px;
 }
-.assign-tip { margin: 0 0 12px; color: #606266; font-size: 14px; }
+.assign-tip { margin: 0 0 12px; color: var(--pw-text-regular); font-size: 14px; }
 .assign-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
 }
-.assign-customer { font-size: 14px; color: #303133; }
+.assign-customer { font-size: 14px; color: var(--pw-text-primary); }
 </style>

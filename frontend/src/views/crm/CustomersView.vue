@@ -1,34 +1,13 @@
 <template>
   <section class="table-page">
-    <div class="sub-page-header">
-      <div>
-        <h2>客户管理</h2>
-        <p class="page-desc">维护客户档案、等级、销售归属与跟进记录。</p>
-      </div>
-    </div>
+    <AppPageHeader title="客户管理" description="维护客户档案、等级、销售归属与跟进记录。" />
 
-    <div class="stats-row">
-      <div class="stat-card blue">
-        <div class="stat-header"><span class="stat-title">客户总数</span><div class="stat-icon">👥</div></div>
-        <div class="stat-value">{{ stats.total }}</div>
-        <div class="stat-footer">全部客户</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-header"><span class="stat-title">本月新增</span><div class="stat-icon">📈</div></div>
-        <div class="stat-value">{{ stats.monthAdded }}</div>
-        <div class="stat-footer">新客户</div>
-      </div>
-      <div class="stat-card orange">
-        <div class="stat-header"><span class="stat-title">活跃客户</span><div class="stat-icon">🤝</div></div>
-        <div class="stat-value">{{ stats.active }}</div>
-        <div class="stat-footer">合作中</div>
-      </div>
-      <div class="stat-card purple">
-        <div class="stat-header"><span class="stat-title">客户转化率</span><div class="stat-icon">🎯</div></div>
-        <div class="stat-value">{{ stats.conversionRate }}%</div>
-        <div class="stat-footer">本月数据</div>
-      </div>
-    </div>
+    <AppStatGrid>
+      <AppStatCard label="客户总数" accent="blue" icon="👥" :value="stats.total" footer="全部客户" />
+      <AppStatCard label="本月新增" accent="green" icon="📈" :value="stats.monthAdded" footer="新客户" />
+      <AppStatCard label="活跃客户" accent="orange" icon="🤝" :value="stats.active" footer="合作中" />
+      <AppStatCard label="客户转化率" accent="purple" icon="🎯" footer="本月数据">{{ stats.conversionRate }}%</AppStatCard>
+    </AppStatGrid>
 
     <div class="table-card">
       <div class="filter-bar">
@@ -568,49 +547,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-.stat-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, .04);
-  position: relative;
-  overflow: hidden;
-}
-.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-.stat-card.blue::before { background: linear-gradient(90deg, #409eff, #66b1ff); }
-.stat-card.green::before { background: linear-gradient(90deg, #67c23a, #85ce61); }
-.stat-card.orange::before { background: linear-gradient(90deg, #e6a23c, #f0c78a); }
-.stat-card.purple::before { background: linear-gradient(90deg, #764ba2, #667eea); }
-.stat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.stat-title { font-size: 14px; color: #909399; min-width: 0; flex: 1; }
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  flex-shrink: 0;
-}
-.stat-card.blue .stat-icon { background: #ecf5ff; }
-.stat-card.green .stat-icon { background: #f0f9eb; }
-.stat-card.orange .stat-icon { background: #fdf6ec; }
-.stat-card.purple .stat-icon { background: #f4f0ff; }
-.stat-value { font-size: 28px; font-weight: 700; color: #303133; margin-bottom: 8px; }
-.stat-footer { font-size: 12px; color: #909399; }
 
 .table-card {
   background: #fff;
@@ -636,7 +572,7 @@ onMounted(() => {
   flex: 1;
   min-width: 0;
 }
-.filter-label { font-size: 14px; color: #606266; white-space: nowrap; }
+.filter-label { font-size: 14px; color: var(--pw-text-regular); white-space: nowrap; }
 .filter-right {
   display: flex;
   align-items: center;
@@ -648,7 +584,7 @@ onMounted(() => {
   justify-content: flex-end;
   padding: 16px 0 4px;
 }
-.transfer-tip { margin: 0 0 12px; color: #606266; font-size: 14px; }
+.transfer-tip { margin: 0 0 12px; color: var(--pw-text-regular); font-size: 14px; }
 
 .sub-table-block { margin-bottom: 18px; }
 .sub-table-header {
@@ -660,10 +596,7 @@ onMounted(() => {
 .sub-table-title {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--pw-text-primary);
 }
 
-@media (max-width: 768px) {
-  .stats-row { grid-template-columns: 1fr; }
-}
 </style>

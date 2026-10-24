@@ -599,7 +599,7 @@ onMounted(() => refreshAll())
 
 <style scoped>
 .muted {
-  color: #909399;
+  color: var(--pw-text-secondary);
   font-size: 12px;
 }
 .rule-tip {
@@ -607,7 +607,7 @@ onMounted(() => refreshAll())
 }
 .field-hint {
   margin-left: 10px;
-  color: #909399;
+  color: var(--pw-text-secondary);
   font-size: 12px;
 }
 </style>

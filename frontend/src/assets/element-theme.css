@@ -1,0 +1,152 @@
+/* ==========================================================
+   Element Plus 主题映射
+   ----------------------------------------------------------
+   作用：把 tokens.css 的语义值映射到 Element Plus 的 CSS 变量，
+   让按钮、标签、分页、表格、弹窗等原生组件自动跟随，避免再手写
+   `.el-button--primary { background: ... }` 这类覆写（易与 hover /
+   disabled / plain 状态打架）。
+
+   加载顺序要求：element-plus/dist/index.css → tokens.css → 本文件
+   ========================================================== */
+
+:root {
+  /* ---------- 主色：保持企业蓝 #409eff ---------- */
+  /* light-N / dark-2 由 EP 算法（与白/黑混合）推算，保证与原生一致 */
+  --el-color-primary: var(--pw-blue-500);
+  --el-color-primary-light-3: #79bbff;
+  --el-color-primary-light-5: #a0cfff;
+  --el-color-primary-light-7: #c6e2ff;
+  --el-color-primary-light-8: #d9ecff;
+  --el-color-primary-light-9: #ecf5ff;
+  --el-color-primary-dark-2: var(--pw-blue-600);
+
+  /* ---------- 语义色：加深到满足 WCAG AA ----------
+     原值 success #67c23a(2.24:1)、warning #e6a23c(2.19:1)、
+     danger #f56c6c(2.90:1) 在浅底小字场景几乎不可读。
+     el-tag 的文字色直接引用 --el-color-success 等，此处一次修正
+     即覆盖全站 82 处 el-tag 与所有涨幅/告警文案。 */
+  --el-color-success: var(--pw-green-600);
+  --el-color-success-light-3: #5fa573;
+  --el-color-success-light-5: #8dbf9b;
+  --el-color-success-light-7: #bad9c3;
+  --el-color-success-light-8: #d1e5d7;
+  --el-color-success-light-9: #e8f2eb;
+  --el-color-success-dark-2: #15662c;
+
+  --el-color-warning: var(--pw-amber-700);
+  --el-color-warning-light-3: #b8954d;
+  --el-color-warning-light-5: #cdb380;
+  --el-color-warning-light-7: #e1d1b3;
+  --el-color-warning-light-8: #ebe1cc;
+  --el-color-warning-light-9: #f5f0e6;
+  --el-color-warning-dark-2: #7b5200;
+
+  --el-color-danger: var(--pw-red-600);
+  --el-color-danger-light-3: #dd646d;
+  --el-color-danger-light-5: #e79197;
+  --el-color-danger-light-7: #f1bdc0;
+  --el-color-danger-light-8: #f5d3d5;
+  --el-color-danger-light-9: #fae9ea;
+  --el-color-danger-dark-2: #a61b25;
+
+  --el-color-error: var(--pw-red-600);
+  --el-color-error-light-3: #dd646d;
+  --el-color-error-light-5: #e79197;
+  --el-color-error-light-7: #f1bdc0;
+  --el-color-error-light-8: #f5d3d5;
+  --el-color-error-light-9: #fae9ea;
+  --el-color-error-dark-2: #a61b25;
+
+  --el-color-info: var(--pw-slate-500);
+  --el-color-info-light-3: #979ca6;
+  --el-color-info-light-5: #b5b9c0;
+  --el-color-info-light-7: #d3d5d9;
+  --el-color-info-light-8: #e1e3e6;
+  --el-color-info-light-9: #f0f1f2;
+  --el-color-info-dark-2: #565b66;
+
+  /* ---------- 文本 ---------- */
+  /* secondary 由 #909399(3.08:1) 上调至 #6b7280(4.83:1)，
+     这是全站最影响「发灰感」的一处改动，副作用最小。 */
+  --el-text-color-primary: var(--pw-text-primary);
+  --el-text-color-regular: var(--pw-text-regular);
+  --el-text-color-secondary: var(--pw-text-secondary);
+  --el-text-color-placeholder: var(--pw-text-placeholder);
+  --el-text-color-disabled: var(--pw-text-disabled);
+
+  /* ---------- 背景 / 填充 / 边框 ---------- */
+  --el-bg-color: var(--pw-bg-surface);
+  --el-bg-color-page: var(--pw-bg-page);
+  --el-bg-color-overlay: var(--pw-bg-surface);
+
+  --el-fill-color-blank: var(--pw-bg-surface);
+  --el-fill-color-light: var(--pw-bg-hover);
+  --el-fill-color-lighter: var(--pw-bg-subtle);
+  --el-fill-color-extra-light: var(--pw-gray-50);
+
+  --el-border-color: var(--pw-border-strong);
+  --el-border-color-light: var(--pw-border);
+  --el-border-color-lighter: var(--pw-border-subtle);
+  --el-border-color-extra-light: var(--pw-gray-100);
+  --el-border-color-hover: var(--pw-border-hover);
+
+  /* ---------- 圆角 / 阴影 / 字体 ---------- */
+  --el-border-radius-base: var(--pw-radius-sm);
+  --el-border-radius-small: var(--pw-radius-xs);
+  --el-border-radius-round: var(--pw-radius-full);
+
+  --el-box-shadow-lighter: var(--pw-shadow-sm);
+  --el-box-shadow-light: var(--pw-shadow-md);
+  --el-box-shadow: var(--pw-shadow-lg);
+  --el-box-shadow-dark: var(--pw-shadow-xl);
+
+  --el-font-size-base: var(--pw-font-base);
+  --el-font-size-small: var(--pw-font-sm);
+  --el-font-size-extra-small: var(--pw-font-xs);
+  --el-font-size-medium: var(--pw-font-md);
+  --el-font-size-large: var(--pw-font-lg);
+  --el-font-size-extra-large: var(--pw-font-xl);
+
+  --el-transition-duration: var(--pw-duration-base);
+  --el-transition-duration-fast: var(--pw-duration-fast);
+  --el-transition-function-ease-in-out-bezier: var(--pw-ease);
+}
+
+/* ---------- 表格：去掉斑马纹的视觉噪音 ----------
+   63 处 el-table 都加了 stripe，叠加表头淡底与 1px 全边框，
+   在 1080p 密排表格里相当吵。改为「表头淡底 + 更浅的行分隔线 +
+   hover 高亮」，表格结构更清楚。
+
+   注意：这些变量必须声明在 `.el-table` 作用域上，不能只放 :root。
+   Element Plus 在 `.el-table{...}` 内部自定义了同名变量（默认指向
+   --el-fill-color-blank = 白色），CSS 变量按就近作用域解析，
+   :root 上的声明会被 .el-table 内的声明直接遮蔽，导致表头始终是白的。 */
+.el-table {
+  --el-table-header-bg-color: var(--pw-bg-subtle);
+  --el-table-header-text-color: var(--pw-text-regular);
+  --el-table-border-color: var(--pw-border-subtle);
+  --el-table-row-hover-bg-color: var(--pw-bg-active);
+  --el-table-current-row-bg-color: var(--pw-bg-active);
+  --el-table-text-color: var(--pw-text-regular);
+}
+
+/* ---------- 焦点可见性 ----------
+   全站原本没有任何 :focus-visible 样式，键盘操作时没有可见焦点，
+   属于可访问性硬伤。用主色描边环统一处理，不改变鼠标点击的观感。 */
+:focus-visible {
+  outline: 2px solid var(--pw-blue-500);
+  outline-offset: 2px;
+  border-radius: var(--pw-radius-xs);
+}
+.el-button:focus-visible,
+.el-input__wrapper:focus-within {
+  outline-offset: 1px;
+}
+
+/* ---------- 数值对齐 ----------
+   表格与统计卡里的数字用等宽数字，纵向能对齐、刷新时不左右抖动。 */
+.el-table .cell,
+.stat-value,
+.el-pagination {
+  font-variant-numeric: tabular-nums;
+}

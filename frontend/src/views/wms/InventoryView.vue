@@ -298,6 +298,6 @@ onMounted(() => loadData())
 }
 .loc-cell .loc-name {
   font-size: 12px;
-  color: #909399;
+  color: var(--pw-text-secondary);
 }
 </style>

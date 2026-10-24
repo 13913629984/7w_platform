@@ -364,7 +364,7 @@ onMounted(() => {
   gap: 8px;
   flex-shrink: 0;
 }
-.quote-customer { font-weight: 600; color: #303133; }
+.quote-customer { font-weight: 600; color: var(--pw-text-primary); }
 .quote-price { font-weight: 600; color: #e6a23c; }
 .filter-bar {
   display: flex;

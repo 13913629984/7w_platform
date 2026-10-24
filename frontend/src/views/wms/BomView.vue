@@ -1,33 +1,17 @@
 <template>
   <section class="table-page layout-page">
-    <div class="sub-page-header">
-      <div>
-        <h2>产品BOM树管理</h2>
-        <p class="page-desc">定义产品BOM层级结构，为节点指定可用物料（主料 / 备料）。</p>
-      </div>
-      <el-space>
+    <AppPageHeader title="产品BOM树管理" description="定义产品BOM层级结构，为节点指定可用物料（主料 / 备料）。">
+      <template #actions>
         <el-button plain :icon="Refresh" @click="loadProducts">刷新</el-button>
         <el-button type="primary" :icon="Plus" @click="openProductDialog('add')">新增产品</el-button>
-      </el-space>
-    </div>
+      </template>
+    </AppPageHeader>
 
-    <div class="stats-row" v-if="stats">
-      <div class="stat-card blue">
-        <div class="stat-header"><span class="stat-title">产品数量</span><div class="stat-icon">📦</div></div>
-        <div class="stat-value">{{ stats.productTotal }}</div>
-        <div class="stat-footer">已维护BOM的产品</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-header"><span class="stat-title">BOM节点</span><div class="stat-icon">🌿</div></div>
-        <div class="stat-value">{{ stats.nodeTotal }}</div>
-        <div class="stat-footer">层级节点总数</div>
-      </div>
-      <div class="stat-card orange">
-        <div class="stat-header"><span class="stat-title">物料关联</span><div class="stat-icon">🔗</div></div>
-        <div class="stat-value">{{ stats.materialTotal }}</div>
-        <div class="stat-footer">节点-物料关联数</div>
-      </div>
-    </div>
+    <AppStatGrid v-if="stats">
+      <AppStatCard label="产品数量" accent="blue" icon="📦" :value="stats.productTotal" footer="已维护BOM的产品" />
+      <AppStatCard label="BOM节点" accent="green" icon="🌿" :value="stats.nodeTotal" footer="层级节点总数" />
+      <AppStatCard label="物料关联" accent="orange" icon="🔗" :value="stats.materialTotal" footer="节点-物料关联数" />
+    </AppStatGrid>
 
     <div class="bom-layout">
       <!-- 左侧：产品列表 -->
@@ -187,7 +171,7 @@
         <el-table-column prop="unit" label="单位" width="70" align="center" />
       </el-table>
       <div class="filter-left" style="margin-top:12px;align-items:flex-end">
-        <span style="font-size:13px;color:#909399">用量：</span>
+        <span style="font-size:13px;color: var(--pw-text-secondary)">用量：</span>
         <el-input-number v-model="materialPickQty" :min="0" :precision="2" :step="1" :value-on-clear="1" controls-position="right" style="width:140px" />
       </div>
       <template #footer>
@@ -677,32 +661,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-.stat-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.04);
-  position: relative;
-  overflow: hidden;
-}
-.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-.stat-card.blue::before { background: linear-gradient(90deg, #409eff, #66b1ff); }
-.stat-card.green::before { background: linear-gradient(90deg, #67c23a, #85ce61); }
-.stat-card.orange::before { background: linear-gradient(90deg, #e6a23c, #f0c78a); }
-.stat-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.stat-title { font-size: 14px; color: #909399; }
-.stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-.stat-card.blue .stat-icon { background: #ecf5ff; color: #409eff; }
-.stat-card.green .stat-icon { background: #f0f9eb; color: #67c23a; }
-.stat-card.orange .stat-icon { background: #fdf6ec; color: #e6a23c; }
-.stat-value { font-size: 28px; font-weight: 700; color: #303133; margin-bottom: 8px; }
-.stat-footer { font-size: 12px; color: #909399; }
 
 .bom-layout { display: flex; gap: 16px; align-items: stretch; }
 .bom-col { min-width: 0; }
@@ -721,7 +679,7 @@ onMounted(() => {
 .panel-title {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--pw-text-primary);
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -732,7 +690,7 @@ onMounted(() => {
 .filter-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 .product-list { flex: 1; overflow-y: auto; min-height: 200px; max-height: 560px; }
-.empty-tip { color: #909399; font-size: 13px; text-align: center; padding: 40px 0; }
+.empty-tip { color: var(--pw-text-secondary); font-size: 13px; text-align: center; padding: 40px 0; }
 .product-item {
   padding: 12px;
   border: 1px solid #ebeef5;
@@ -744,22 +702,22 @@ onMounted(() => {
 .product-item:hover { border-color: #c6e2ff; background: #f5faff; }
 .product-item.active { border-color: #409eff; background: #ecf5ff; }
 .product-item-top { display: flex; align-items: center; justify-content: space-between; }
-.product-name { font-weight: 600; color: #303133; }
-.product-item-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; font-size: 12px; color: #909399; }
+.product-name { font-weight: 600; color: var(--pw-text-primary); }
+.product-item-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--pw-text-secondary); }
 .product-code { font-family: monospace; }
 
 .bom-tree-body { flex: 1; overflow: auto; min-height: 200px; }
 .bom-tree { font-size: 14px; }
 .tree-node { display: flex; align-items: center; gap: 8px; }
 .tree-node-name { font-weight: 500; }
-.tree-node-group .tree-node-name { color: #303133; }
+.tree-node-group .tree-node-name { color: var(--pw-text-primary); }
 .tree-node-actions { display: none; align-items: center; gap: 2px; margin-left: 4px; }
 .tree-node-group:hover .tree-node-actions { display: inline-flex; }
 .tree-node-actions :deep(.el-button) { padding: 0 4px; height: 22px; }
 .tree-material { width: 100%; }
-.tree-material-name { color: #606266; }
-.tree-material-sku { color: #909399; font-size: 12px; font-family: monospace; }
-.tree-material-qty { color: #909399; font-size: 12px; }
+.tree-material-name { color: var(--pw-text-regular); }
+.tree-material-sku { color: var(--pw-text-secondary); font-size: 12px; font-family: monospace; }
+.tree-material-qty { color: var(--pw-text-secondary); font-size: 12px; }
 .tree-material-del { margin-left: auto; opacity: 0; transition: opacity .15s; }
 .tree-material:hover .tree-material-del { opacity: 1; }
 

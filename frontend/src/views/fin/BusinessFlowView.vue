@@ -225,7 +225,7 @@ function handleDetail() {
 <style scoped>
 .flow-section { margin-bottom: 16px; }
 .flow-line { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px; padding: 16px 4px; }
-.flow-arrow { align-self: flex-start; margin-top: 14px; color: #c0c4cc; font-size: 18px; }
+.flow-arrow { align-self: flex-start; margin-top: 14px; color: var(--pw-text-secondary); font-size: 18px; }
 .flow-box { width: 120px; border-radius: 8px; border: 1px solid transparent; padding: 12px 8px; text-align: center; background: #fff; }
 .flow-box-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
 .flow-box-tag { font-size: 11px; font-weight: 600; margin-top: 6px; }
@@ -241,7 +241,7 @@ function handleDetail() {
 
 .tip-box { background: #fdf6ec; border: 1px solid #f5dab1; border-radius: 10px; padding: 16px 18px; margin-bottom: 24px; }
 .tip-title { font-weight: 600; color: #e6a23c; margin-bottom: 10px; }
-.tip-box p { font-size: 13px; color: #606266; line-height: 1.9; margin: 0; }
+.tip-box p { font-size: 13px; color: var(--pw-text-regular); line-height: 1.9; margin: 0; }
 .tip-box strong { color: var(--text-primary); }
 
 .core-flow-banner { background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; padding: 18px; color: #fff; margin: 8px 0 24px; }
@@ -263,5 +263,5 @@ function handleDetail() {
 .formula-box.blue .formula-title { color: #409eff; }
 .formula-box.green .formula-title { color: #67c23a; }
 .formula-box.red .formula-title { color: #f56c6c; }
-.formula-body { font-size: 13px; color: #606266; line-height: 1.6; }
+.formula-body { font-size: 13px; color: var(--pw-text-regular); line-height: 1.6; }
 </style>

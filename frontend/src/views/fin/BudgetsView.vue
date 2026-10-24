@@ -270,10 +270,10 @@ function handleCreate() {
 .bdg-chart { height: 280px; padding: 8px 4px 0; }
 .bdg-chart svg { width: 100%; height: 100%; }
 .bdg-grid { stroke: #ebeef5; stroke-width: 1; }
-.bdg-axis-label { fill: #909399; font-size: 11px; }
+.bdg-axis-label { fill: var(--pw-text-secondary); font-size: 11px; }
 .bdg-bar.exec, .bdg-bar.actual { fill: #409eff; }
 .bdg-bar.remain { fill: #67c23a; }
-.bdg-bar.budget { fill: #909399; }
+.bdg-bar.budget { fill: var(--pw-text-secondary); }
 .legend-gray { background: #909399; }
 .expense-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .rate-cell { display: flex; align-items: center; gap: 10px; }

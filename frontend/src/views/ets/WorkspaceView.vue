@@ -217,7 +217,7 @@ onMounted(() => loadData())
   flex-direction: column;
   justify-content: space-between;
   align-items: flex-end;
-  color: #909399;
+  color: var(--pw-text-secondary);
   font-size: 12px;
   padding-bottom: 22px;
 }
@@ -242,7 +242,7 @@ onMounted(() => loadData())
 }
 .ets-trend-value {
   font-size: 12px;
-  color: #606266;
+  color: var(--pw-text-regular);
   margin-bottom: 4px;
 }
 .ets-trend-bar {
@@ -255,7 +255,7 @@ onMounted(() => loadData())
   height: 22px;
   line-height: 22px;
   font-style: normal;
-  color: #606266;
+  color: var(--pw-text-regular);
   font-size: 12px;
 }
 .ets-legend {
@@ -274,7 +274,7 @@ onMounted(() => loadData())
 .ets-cat-name {
   width: 64px;
   font-size: 13px;
-  color: #606266;
+  color: var(--pw-text-regular);
   flex-shrink: 0;
 }
 .ets-cat-track {
@@ -295,10 +295,10 @@ onMounted(() => loadData())
   text-align: right;
   font-size: 13px;
   font-weight: 600;
-  color: #303133;
+  color: var(--pw-text-primary);
 }
 .ets-empty {
-  color: #909399;
+  color: var(--pw-text-secondary);
   font-size: 13px;
   padding: 12px 0;
 }

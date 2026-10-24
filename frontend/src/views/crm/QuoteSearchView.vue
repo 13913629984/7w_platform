@@ -149,7 +149,7 @@ onMounted(() => {
   gap: 10px;
   flex-wrap: wrap;
 }
-.filter-label { font-size: 14px; color: #606266; white-space: nowrap; }
+.filter-label { font-size: 14px; color: var(--pw-text-regular); white-space: nowrap; }
 .crm-pagination {
   display: flex;
   justify-content: flex-end;

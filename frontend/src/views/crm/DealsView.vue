@@ -1,39 +1,19 @@
 <template>
   <section class="table-page">
-    <div class="sub-page-header">
-      <div>
-        <h2>商机管理</h2>
-        <p class="page-desc">管理销售机会、阶段和预计金额。</p>
-      </div>
-      <div class="header-actions">
+    <AppPageHeader title="商机管理" description="管理销售机会、阶段和预计金额。">
+      <template #actions>
         <el-button plain :icon="Download" @click="handleExport">导出</el-button>
         <el-button plain :icon="Refresh" @click="loadData">刷新</el-button>
         <el-button type="primary" :icon="Plus" @click="openAdd">新增商机</el-button>
-      </div>
-    </div>
+      </template>
+    </AppPageHeader>
 
-    <div class="stats-row">
-      <div class="stat-card blue">
-        <div class="stat-header"><span class="stat-title">商机总数</span><div class="stat-icon">📊</div></div>
-        <div class="stat-value">{{ stats.total }}</div>
-        <div class="stat-footer">全部商机</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-header"><span class="stat-title">本月新增</span><div class="stat-icon">📈</div></div>
-        <div class="stat-value">{{ stats.monthAdded }}</div>
-        <div class="stat-footer">新商机</div>
-      </div>
-      <div class="stat-card orange">
-        <div class="stat-header"><span class="stat-title">预计金额</span><div class="stat-icon">💰</div></div>
-        <div class="stat-value">¥{{ stats.totalAmount }}万</div>
-        <div class="stat-footer">总预估</div>
-      </div>
-      <div class="stat-card purple">
-        <div class="stat-header"><span class="stat-title">平均胜率</span><div class="stat-icon">🎯</div></div>
-        <div class="stat-value">{{ stats.avgWinRate }}%</div>
-        <div class="stat-footer">胜率统计</div>
-      </div>
-    </div>
+    <AppStatGrid>
+      <AppStatCard label="商机总数" accent="blue" icon="📊" :value="stats.total" footer="全部商机" />
+      <AppStatCard label="本月新增" accent="green" icon="📈" :value="stats.monthAdded" footer="新商机" />
+      <AppStatCard label="预计金额" accent="orange" icon="💰" footer="总预估">¥{{ stats.totalAmount }}万</AppStatCard>
+      <AppStatCard label="平均胜率" accent="purple" icon="🎯" footer="胜率统计">{{ stats.avgWinRate }}%</AppStatCard>
+    </AppStatGrid>
 
     <div class="table-card">
       <div class="filter-bar">
@@ -484,63 +464,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.sub-page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-.stat-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, .04);
-  position: relative;
-  overflow: hidden;
-}
-.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-.stat-card.blue::before { background: linear-gradient(90deg, #409eff, #66b1ff); }
-.stat-card.green::before { background: linear-gradient(90deg, #67c23a, #85ce61); }
-.stat-card.orange::before { background: linear-gradient(90deg, #e6a23c, #f0c78a); }
-.stat-card.purple::before { background: linear-gradient(90deg, #764ba2, #667eea); }
-.stat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.stat-title { font-size: 14px; color: #909399; min-width: 0; flex: 1; }
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  flex-shrink: 0;
-}
-.stat-card.blue .stat-icon { background: #ecf5ff; }
-.stat-card.green .stat-icon { background: #f0f9eb; }
-.stat-card.orange .stat-icon { background: #fdf6ec; }
-.stat-card.purple .stat-icon { background: #f4f0ff; }
-.stat-value { font-size: 28px; font-weight: 700; color: #303133; margin-bottom: 8px; }
-.stat-footer { font-size: 12px; color: #909399; }
 
 .table-card {
   background: #fff;
@@ -550,7 +473,7 @@ onMounted(() => {
   min-width: 0;
 }
 .table-card .el-table { width: 100%; }
-.deal-name { font-weight: 600; color: #303133; }
+.deal-name { font-weight: 600; color: var(--pw-text-primary); }
 .amount { font-weight: 600; color: #e6a23c; }
 .filter-bar {
   display: flex;
@@ -579,10 +502,7 @@ onMounted(() => {
   justify-content: flex-end;
   padding: 16px 0 4px;
 }
-.form-tip { font-size: 12px; color: #909399; line-height: 1.6; margin-top: 2px; }
-.unit-tip { margin-left: 8px; color: #909399; font-size: 13px; }
+.form-tip { font-size: 12px; color: var(--pw-text-secondary); line-height: 1.6; margin-top: 2px; }
+.unit-tip { margin-left: 8px; color: var(--pw-text-secondary); font-size: 13px; }
 
-@media (max-width: 768px) {
-  .stats-row { grid-template-columns: 1fr; }
-}
 </style>

@@ -100,7 +100,7 @@
               <el-select v-model="form.registerId" filterable clearable placeholder="选择来货登记" style="width:100%" @change="onRegisterChange">
                 <el-option v-for="opt in registerOptions" :key="opt.id" :label="`${opt.registerNo} · ${opt.customerName || ''}`" :value="opt.id">
                   <span>{{ opt.registerNo }}</span>
-                  <span style="float:right;color:#909399;font-size:12px">{{ opt.product || '' }}</span>
+                  <span style="float:right;color: var(--pw-text-secondary);font-size:12px">{{ opt.product || '' }}</span>
                 </el-option>
               </el-select>
             </el-form-item>

@@ -1,39 +1,19 @@
 <template>
   <section class="table-page">
-    <div class="sub-page-header">
-      <div>
-        <h2>联系人管理</h2>
-        <p class="page-desc">维护客户联系人和沟通信息。</p>
-      </div>
-      <div class="header-actions">
+    <AppPageHeader title="联系人管理" description="维护客户联系人和沟通信息。">
+      <template #actions>
         <el-button plain :icon="Download" @click="handleExport">导出</el-button>
         <el-button plain :icon="Refresh" @click="loadData">刷新</el-button>
         <el-button type="primary" :icon="Plus" @click="openAdd">新增联系人</el-button>
-      </div>
-    </div>
+      </template>
+    </AppPageHeader>
 
-    <div class="stats-row">
-      <div class="stat-card blue">
-        <div class="stat-header"><span class="stat-title">联系人总数</span><div class="stat-icon">👥</div></div>
-        <div class="stat-value">{{ stats.total }}</div>
-        <div class="stat-footer">全部联系人</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-header"><span class="stat-title">主要联系人</span><div class="stat-icon">⭐</div></div>
-        <div class="stat-value">{{ stats.primary }}</div>
-        <div class="stat-footer">关键联系人</div>
-      </div>
-      <div class="stat-card orange">
-        <div class="stat-header"><span class="stat-title">本月新增</span><div class="stat-icon">📈</div></div>
-        <div class="stat-value">{{ stats.monthAdded }}</div>
-        <div class="stat-footer">新联系人</div>
-      </div>
-      <div class="stat-card purple">
-        <div class="stat-header"><span class="stat-title">客户覆盖</span><div class="stat-icon">🏢</div></div>
-        <div class="stat-value">{{ stats.customerCount }}个客户</div>
-        <div class="stat-footer">联系覆盖</div>
-      </div>
-    </div>
+    <AppStatGrid>
+      <AppStatCard label="联系人总数" accent="blue" icon="👥" :value="stats.total" footer="全部联系人" />
+      <AppStatCard label="主要联系人" accent="green" icon="⭐" :value="stats.primary" footer="关键联系人" />
+      <AppStatCard label="本月新增" accent="orange" icon="📈" :value="stats.monthAdded" footer="新联系人" />
+      <AppStatCard label="客户覆盖" accent="purple" icon="🏢" footer="联系覆盖">{{ stats.customerCount }}个客户</AppStatCard>
+    </AppStatGrid>
 
     <div class="table-card">
       <div class="filter-bar">
@@ -396,63 +376,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.sub-page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-.stat-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, .04);
-  position: relative;
-  overflow: hidden;
-}
-.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-.stat-card.blue::before { background: linear-gradient(90deg, #409eff, #66b1ff); }
-.stat-card.green::before { background: linear-gradient(90deg, #67c23a, #85ce61); }
-.stat-card.orange::before { background: linear-gradient(90deg, #e6a23c, #f0c78a); }
-.stat-card.purple::before { background: linear-gradient(90deg, #764ba2, #667eea); }
-.stat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.stat-title { font-size: 14px; color: #909399; min-width: 0; flex: 1; }
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  flex-shrink: 0;
-}
-.stat-card.blue .stat-icon { background: #ecf5ff; }
-.stat-card.green .stat-icon { background: #f0f9eb; }
-.stat-card.orange .stat-icon { background: #fdf6ec; }
-.stat-card.purple .stat-icon { background: #f4f0ff; }
-.stat-value { font-size: 28px; font-weight: 700; color: #303133; margin-bottom: 8px; }
-.stat-footer { font-size: 12px; color: #909399; }
 
 .table-card {
   background: #fff;
@@ -462,7 +385,7 @@ onMounted(() => {
   min-width: 0;
 }
 .table-card .el-table { width: 100%; }
-.contact-name { font-weight: 600; color: #303133; }
+.contact-name { font-weight: 600; color: var(--pw-text-primary); }
 .filter-bar {
   display: flex;
   align-items: center;
@@ -491,7 +414,4 @@ onMounted(() => {
   padding: 16px 0 4px;
 }
 
-@media (max-width: 768px) {
-  .stats-row { grid-template-columns: 1fr; }
-}
 </style>

@@ -1,0 +1,179 @@
+/* ==========================================================
+   设计令牌（Design Tokens）
+   ----------------------------------------------------------
+   目标：把散落在 41 个视图里的 147 个唯一色值、无数个字号/圆角/阴影
+   收敛为一套有层级的值。此文件只做「定义」，不写任何选择器规则。
+
+   分层约定
+   ---------
+   1) Primitives  —— 原始色阶，只在此处出现字面量。
+   2) Semantic    —— 语义别名（文本/背景/边框/语义色），业务与视图优先用它。
+   3) 兼容别名    —— 旧代码里的 var(--text-secondary) 等继续可用，无需批量改动。
+
+   主色保持企业蓝 #409eff（与 Element Plus 原生一致，改动面最小），
+   语义色加深到满足 WCAG AA（普通文本 4.5:1 / 大文本 3:1），
+   涨幅绿、告警橙这类「小字 + 浅底」场景此前只有 2.0:1，几乎看不清。
+   ========================================================== */
+
+:root {
+  /* ---------------- 1. Primitives：中性色阶 ---------------- */
+  --pw-gray-50: #f7f8fa;
+  --pw-gray-100: #f0f2f5;
+  --pw-gray-200: #e8eaee;
+  --pw-gray-300: #dcdfe6;
+  --pw-gray-400: #c0c4cc;
+  --pw-gray-500: #909399; /* 仅用于描边、图标、禁用态，不再用于正文小字 */
+  --pw-gray-600: #6b7280;
+  --pw-gray-700: #4b5563;
+  --pw-gray-800: #303133;
+  --pw-gray-900: #1f2329;
+
+  /* ---------------- 1. Primitives：品牌与语义色 ---------------- */
+  /* 品牌蓝：与 Element Plus 默认一致，主按钮 2.78:1 属于 EP 固有取值，
+     需要更高对比时用 primary-strong（5.07:1）。 */
+  --pw-blue-500: #409eff;
+  --pw-blue-600: #337ecc;
+  --pw-blue-700: #2b6cb0;
+  --pw-blue-strong: #1a6fc7;
+
+  /* 品牌紫：仅用于 logo / 登录页 / 品牌区点缀，不参与业务语义 */
+  --pw-violet-500: #6d5df6;
+  --pw-violet-400: #e879f9;
+
+  /* 状态语义（实心，白底对比度均 >= 4.5） */
+  --pw-green-600: #1a7f37; /* 5.08:1 */
+  --pw-amber-700: #9a6700; /* 4.87:1 */
+  --pw-red-600: #cf222e; /* 5.36:1 */
+  --pw-slate-500: #6b7280; /* 4.83:1 */
+
+  /* 状态语义（浅底 / 深色背景上的文字用） */
+  --pw-green-400: #67c23a;
+  --pw-amber-400: #e6a23c;
+  --pw-red-400: #f56c6c;
+  --pw-teal-500: #06b6d4; /* CRM 线索/活动页的第五张卡用色，原型中为 #13c2c2 */
+
+  /* 状态语义（浅底底色，供统计卡图标容器用） */
+  --pw-green-subtle: #f0f9eb;
+  --pw-amber-subtle: #fdf6ec;
+  --pw-red-subtle: #fef0f0;
+  --pw-violet-subtle: #f4f0ff;
+  --pw-teal-subtle: #e6fffb;
+
+  /* ---------------- 2. Semantic：文本 ---------------- */
+  /* 注意：#909399(3.08:1) 不再作为 12px 正文，改用 text-secondary。
+     旧代码仍可引用 --text-secondary，值已上调到 #6b7280(4.83:1)。 */
+  --pw-text-primary: var(--pw-gray-800); /* 标题 / 关键数值 13.02:1 */
+  --pw-text-regular: var(--pw-gray-700); /* 正文 7.56:1 */
+  --pw-text-secondary: var(--pw-gray-600); /* 辅助说明 4.83:1 */
+  --pw-text-tertiary: var(--pw-gray-500); /* 描边级提示，勿用于小字 */
+  --pw-text-placeholder: var(--pw-gray-500);
+  --pw-text-disabled: var(--pw-gray-400);
+  --pw-text-inverse: #ffffff;
+
+  /* 语义化文字：浅底上使用深色变体，深底/实心按钮上用白色 */
+  --pw-text-success: var(--pw-green-600);
+  --pw-text-warning: var(--pw-amber-700);
+  --pw-text-danger: var(--pw-red-600);
+  --pw-text-info: var(--pw-slate-500);
+
+  /* ---------------- 2. Semantic：背景 ---------------- */
+  --pw-bg-page: var(--pw-gray-100); /* 页面底色 #f0f2f5，与原值一致 */
+  --pw-bg-surface: #ffffff; /* 卡片 / 表格 / 弹窗 */
+  --pw-bg-subtle: var(--pw-gray-50); /* 表头、分组条、只读区 */
+  --pw-bg-hover: #f5f7fa; /* 行 hover、次级按钮 hover */
+  --pw-bg-active: #ecf5ff; /* 选中态（= primary-light-9） */
+  --pw-bg-mask: rgba(15, 23, 42, 0.45);
+
+  /* 语义浅底（对应 Element 的 light-9） */
+  --pw-bg-success-subtle: #e8f2eb;
+  --pw-bg-warning-subtle: #f5f0e6;
+  --pw-bg-danger-subtle: #fae9ea;
+  --pw-bg-info-subtle: #f0f1f2;
+
+  /* ---------------- 2. Semantic：边框 ---------------- */
+  --pw-border: var(--pw-gray-200); /* 默认分隔线，比原 #e8e8e8 略实 */
+  --pw-border-subtle: var(--pw-gray-100);
+  --pw-border-strong: var(--pw-gray-300);
+  --pw-border-hover: var(--pw-gray-400);
+  --pw-border-width: 1px;
+
+  /* ---------------- 2. Semantic：圆角 ---------------- */
+  /* 原先有 2/3/4/6/7/8/10/12/14/16 十档，收敛为四档 */
+  --pw-radius-xs: 4px; /* tag / 小徽标 */
+  --pw-radius-sm: 6px; /* 按钮 / 输入框 / 菜单项 */
+  --pw-radius-md: 8px; /* 图标容器 / 子面板 */
+  --pw-radius-lg: 12px; /* 卡片 */
+  --pw-radius-xl: 16px; /* 弹窗 / 登录卡 */
+  --pw-radius-full: 999px;
+
+  /* ---------------- 2. Semantic：阴影（三档层级） ---------------- */
+  /* 原先 21 处几乎都是同一个 0 2px 12px rgba(0,0,0,.04)，所有卡片同一层级，没有主次 */
+  --pw-shadow-sm: 0 1px 2px rgba(31, 35, 41, 0.04); /* 表格卡、贴边容器 */
+  --pw-shadow-md: 0 2px 8px rgba(31, 35, 41, 0.06); /* 常规卡片（默认） */
+  --pw-shadow-lg: 0 8px 24px rgba(31, 35, 41, 0.1); /* hover 抬升 / 下拉层 */
+  --pw-shadow-xl: 0 20px 60px rgba(15, 23, 42, 0.28); /* 弹窗 / 登录卡 */
+
+  /* ---------------- 2. Semantic：间距（4px 栅格） ---------------- */
+  --pw-space-1: 4px;
+  --pw-space-2: 8px;
+  --pw-space-3: 12px;
+  --pw-space-4: 16px;
+  --pw-space-5: 20px;
+  --pw-space-6: 24px;
+  --pw-space-8: 32px;
+  --pw-space-10: 40px;
+
+  /* ---------------- 2. Semantic：字号与行高 ---------------- */
+  /* 原先 9~44px 无级差；收敛为 7 档 + 3 个展示级 */
+  --pw-font-xs: 12px;
+  --pw-font-sm: 13px;
+  --pw-font-base: 14px;
+  --pw-font-md: 16px;
+  --pw-font-lg: 18px;
+  --pw-font-xl: 20px;
+  --pw-font-2xl: 24px;
+  --pw-font-3xl: 28px; /* 统计卡数值 */
+  --pw-font-4xl: 32px;
+
+  --pw-leading-tight: 1.25;
+  --pw-leading-snug: 1.4;
+  --pw-leading-normal: 1.6;
+
+  /* 数值场景用等宽数字，避免表格里数字跳动 */
+  --pw-font-numeric: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+
+  /* ---------------- 2. Semantic：动效 ---------------- */
+  --pw-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --pw-duration-fast: 0.15s;
+  --pw-duration-base: 0.2s;
+  --pw-duration-slow: 0.3s;
+
+  /* ---------------- 2. Semantic：层级 ---------------- */
+  --pw-z-sidebar: 100;
+  --pw-z-mask: 99;
+  --pw-z-header: 50;
+  --pw-z-dropdown: 2000;
+
+  /* ==========================================================
+     3. 兼容别名：保证现有 styles.css / 41 个视图无需改动即可受益
+     ========================================================== */
+  --sidebar-width: 220px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 60px;
+  --page-padding: var(--pw-space-6);
+
+  --page-bg: var(--pw-bg-page);
+  --text-primary: var(--pw-text-primary);
+  --text-regular: var(--pw-text-regular);
+  --text-secondary: var(--pw-text-secondary); /* 值从 #909399 上调到 #6b7280 */
+  --border-color: var(--pw-border);
+  --primary: var(--pw-blue-500);
+
+  /* 侧边栏（深色区）专用 */
+  --pw-sidebar-bg: linear-gradient(180deg, #15162b 0%, #1e1b4b 55%, #15162b 100%);
+  --pw-sidebar-text: rgba(241, 245, 249, 0.76);
+  --pw-sidebar-text-dim: rgba(165, 180, 252, 0.62);
+  --pw-sidebar-hover: rgba(109, 93, 246, 0.12);
+  --pw-sidebar-active: rgba(109, 93, 246, 0.18);
+  --pw-sidebar-divider: rgba(165, 180, 252, 0.16);
+}

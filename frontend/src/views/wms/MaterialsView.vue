@@ -1,40 +1,20 @@
 <template>
   <section class="table-page">
-    <div class="sub-page-header">
-      <div>
-        <h2>物料管理</h2>
-        <p class="page-desc">维护物料编码、规格、单位、品牌和安全库存。</p>
-      </div>
-      <el-space>
+    <AppPageHeader title="物料管理" description="维护物料编码、规格、单位、品牌和安全库存。">
+      <template #actions>
         <el-button plain :icon="Download" @click="handleExport">导出</el-button>
         <el-button plain :icon="Upload" @click="openImport">导入</el-button>
         <el-button plain :icon="Refresh" @click="loadData">刷新</el-button>
         <el-button type="primary" :icon="Plus" @click="openAdd">新增物料</el-button>
-      </el-space>
-    </div>
+      </template>
+    </AppPageHeader>
 
-    <div class="stats-row" v-if="stats">
-      <div class="stat-card blue">
-        <div class="stat-header"><span class="stat-title">物料总数</span><div class="stat-icon">📦</div></div>
-        <div class="stat-value">{{ stats.total }}</div>
-        <div class="stat-footer">维护中物料数</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-header"><span class="stat-title">启用物料</span><div class="stat-icon">✓</div></div>
-        <div class="stat-value">{{ stats.activeCount }}</div>
-        <div class="stat-footer">正常业务可用</div>
-      </div>
-      <div class="stat-card orange">
-        <div class="stat-header"><span class="stat-title">禁用物料</span><div class="stat-icon">🚫</div></div>
-        <div class="stat-value">{{ stats.inactiveCount }}</div>
-        <div class="stat-footer">已停用物料</div>
-      </div>
-      <div class="stat-card purple">
-        <div class="stat-header"><span class="stat-title">品牌数量</span><div class="stat-icon">🏷️</div></div>
-        <div class="stat-value">{{ stats.brandCount }}</div>
-        <div class="stat-footer">覆盖品牌数</div>
-      </div>
-    </div>
+    <AppStatGrid v-if="stats">
+      <AppStatCard label="物料总数" accent="blue" icon="📦" :value="stats.total" footer="维护中物料数" />
+      <AppStatCard label="启用物料" accent="green" icon="✓" :value="stats.activeCount" footer="正常业务可用" />
+      <AppStatCard label="禁用物料" accent="orange" icon="🚫" :value="stats.inactiveCount" footer="已停用物料" />
+      <AppStatCard label="品牌数量" accent="purple" icon="🏷️" :value="stats.brandCount" footer="覆盖品牌数" />
+    </AppStatGrid>
 
     <div class="table-card">
       <div class="filter-bar">
@@ -729,65 +709,6 @@ onMounted(() => {
 
 <style scoped>
 /* 卡片标题防止溢出：让 title 收缩、icon 不被挤出 */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-.stat-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.04);
-  position: relative;
-  overflow: hidden;
-  transition: transform .2s, box-shadow .2s;
-}
-.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-.stat-card.blue::before { background: linear-gradient(90deg, #409eff, #66b1ff); }
-.stat-card.green::before { background: linear-gradient(90deg, #67c23a, #85ce61); }
-.stat-card.orange::before { background: linear-gradient(90deg, #e6a23c, #f0c78a); }
-.stat-card.purple::before { background: linear-gradient(90deg, #764ba2, #667eea); }
-.stat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.stat-title {
-  font-size: 14px;
-  color: #909399;
-  min-width: 0;
-  flex: 1;
-  white-space: normal;
-  word-break: break-word;
-}
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  flex-shrink: 0;
-}
-.stat-card.blue .stat-icon { background: #ecf5ff; color: #409eff; }
-.stat-card.green .stat-icon { background: #f0f9eb; color: #67c23a; }
-.stat-card.orange .stat-icon { background: #fdf6ec; color: #e6a23c; }
-.stat-card.purple .stat-icon { background: #f4f0ff; color: #764ba2; }
-.stat-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: #303133;
-  margin-bottom: 8px;
-}
-.stat-footer {
-  font-size: 12px;
-  color: #909399;
-}
 
 /* 表格外层：防止横向溢出，并保留卡片样式 */
 .table-card {
@@ -828,7 +749,5 @@ onMounted(() => {
 }
 
 /* 小屏幕下防止 emoji/icon 把卡片撑大 */
-@media (max-width: 768px) {
-  .stats-row { grid-template-columns: 1fr; }
-}
+
 </style>

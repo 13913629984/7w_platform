@@ -1,38 +1,18 @@
 <template>
   <section class="table-page layout-page">
-    <div class="sub-page-header">
-      <div>
-        <h2>类型管理</h2>
-        <p class="page-desc">维护物料类型树和库存分类层级。</p>
-      </div>
-      <el-space>
+    <AppPageHeader title="类型管理" description="维护物料类型树和库存分类层级。">
+      <template #actions>
         <el-button plain :icon="Refresh" @click="loadTree">刷新</el-button>
         <el-button type="primary" :icon="Plus" @click="handleAddRoot">新增一级类型</el-button>
-      </el-space>
-    </div>
+      </template>
+    </AppPageHeader>
 
-    <div class="stats-row">
-      <div class="stat-card blue">
-        <div class="stat-header"><span class="stat-title">类型总数</span><div class="stat-icon">📂</div></div>
-        <div class="stat-value">{{ stats.total }}</div>
-        <div class="stat-footer">含一级与子类型</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-header"><span class="stat-title">一级类型</span><div class="stat-icon">🌲</div></div>
-        <div class="stat-value">{{ stats.rootCount }}</div>
-        <div class="stat-footer">顶层分类数量</div>
-      </div>
-      <div class="stat-card orange">
-        <div class="stat-header"><span class="stat-title">子类型</span><div class="stat-icon">🌿</div></div>
-        <div class="stat-value">{{ stats.childCount }}</div>
-        <div class="stat-footer">细分类型数量</div>
-      </div>
-      <div class="stat-card purple">
-        <div class="stat-header"><span class="stat-title">禁用类型</span><div class="stat-icon">🚫</div></div>
-        <div class="stat-value">{{ stats.disabledCount }}</div>
-        <div class="stat-footer">已停用分类</div>
-      </div>
-    </div>
+    <AppStatGrid>
+      <AppStatCard label="类型总数" accent="blue" icon="📂" :value="stats.total" footer="含一级与子类型" />
+      <AppStatCard label="一级类型" accent="green" icon="🌲" :value="stats.rootCount" footer="顶层分类数量" />
+      <AppStatCard label="子类型" accent="orange" icon="🌿" :value="stats.childCount" footer="细分类型数量" />
+      <AppStatCard label="禁用类型" accent="purple" icon="🚫" :value="stats.disabledCount" footer="已停用分类" />
+    </AppStatGrid>
 
     <div class="wms-type-layout">
       <div class="wms-type-tree-panel">
@@ -136,28 +116,14 @@
 </template>
 
 <style scoped>
-.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 16px 0; }
-.stat-card { background: #fff; border-radius: 8px; padding: 16px 20px; border-top: 3px solid #409eff; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-.stat-card.blue { border-top-color: #409eff; }
-.stat-card.green { border-top-color: #67c23a; }
-.stat-card.orange { border-top-color: #e6a23c; }
-.stat-card.purple { border-top-color: #9b59b6; }
-.stat-header { display:flex; justify-content:space-between; align-items:center; }
-.stat-title { color: #606266; font-size: 14px; }
-.stat-icon { font-size: 22px; }
-.stat-value { font-size: 28px; font-weight: 600; margin-top: 8px; color: #303133; }
-.stat-footer { color: #909399; font-size: 12px; margin-top: 4px; }
 .wms-type-layout { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 16px; }
 .wms-type-tree-panel, .wms-type-form-panel { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); min-height: 480px; min-width: 0; }
 .wms-type-panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; }
-.wms-type-title { font-size: 16px; font-weight: 600; color: #303133; }
+.wms-type-title { font-size: 16px; font-weight: 600; color: var(--pw-text-primary); }
 .wms-tree-node { display:flex; align-items:center; gap: 8px; flex: 1; }
 .wms-tree-label { flex: 1; }
 .wms-type-tree { max-height: 600px; overflow: auto; }
 .wms-type-form-content { max-width: 720px; }
-.sub-page-header { display:flex; justify-content:space-between; align-items:flex-start; gap: 12px; flex-wrap: wrap; padding: 8px 0 16px; }
-.sub-page-header h2 { margin: 0; font-size: 22px; color: #303133; }
-.page-desc { color: #909399; font-size: 13px; margin-top: 4px; }
 @media (max-width: 1100px) {
   .wms-type-layout { grid-template-columns: 1fr; }
   .wms-type-tree-panel, .wms-type-form-panel { min-height: auto; }

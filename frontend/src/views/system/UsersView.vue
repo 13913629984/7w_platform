@@ -1,48 +1,26 @@
 <template>
   <section class="table-page">
-    <div class="sub-page-header">
-      <div>
-        <h2>&#29992;&#25143;&#31649;&#29702;</h2>
-        <p class="page-desc">&#32500;&#25252;&#29992;&#25143;&#36134;&#21495;&#12289;&#23703;&#20301;&#12289;&#29366;&#24577;&#19982;&#32452;&#32455;&#20851;&#31995;&#12290;</p>
-      </div>
-      <div>
-        <el-button size="small" plain>&#23548;&#20986;</el-button>
-        <el-button size="small" plain @click="loadUsers">&#21047;&#26032;</el-button>
-      </div>
-    </div>
+    <AppPageHeader title="用户管理" description="维护用户账号、岗位、状态与组织关系。">
+      <template #actions>
+        <el-button plain>导出</el-button>
+        <el-button plain @click="loadUsers">刷新</el-button>
+      </template>
+    </AppPageHeader>
 
-    <div class="stats-row user-mgmt-stats">
-      <div class="stat-card blue">
-        <div class="stat-body">
-          <div class="stat-info">
-            <div class="stat-header"><span class="stat-title">&#29992;&#25143;&#24635;&#25968;</span></div>
-            <div class="stat-value">{{ stats.total }}</div>
-            <div class="stat-footer"><span>&#22312;&#29992; {{ stats.active }} / &#31105;&#29992; {{ stats.disabled }}</span></div>
-          </div>
-          <div class="stat-icon">&#9782;</div>
-        </div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-body">
-          <div class="stat-info">
-            <div class="stat-header"><span class="stat-title">&#22312;&#29992;&#25968;&#37327;</span></div>
-            <div class="stat-value">{{ stats.active }}</div>
-            <div class="stat-footer"><span>&#21551;&#29992;&#29366;&#24577;&#30340;&#29992;&#25143;</span></div>
-          </div>
-          <div class="stat-icon">&#10003;</div>
-        </div>
-      </div>
-      <div class="stat-card red">
-        <div class="stat-body">
-          <div class="stat-info">
-            <div class="stat-header"><span class="stat-title">&#31105;&#29992;&#25968;&#37327;</span></div>
-            <div class="stat-value">{{ stats.disabled }}</div>
-            <div class="stat-footer"><span>&#20572;&#29992;&#29366;&#24577;&#30340;&#29992;&#25143;</span></div>
-          </div>
-          <div class="stat-icon">&#10005;</div>
-        </div>
-      </div>
-    </div>
+    <AppStatGrid>
+      <AppStatCard label="用户总数" accent="blue" :value="stats.total">
+        <template #icon>&#9782;</template>
+        <template #footer><span>在用 {{ stats.active }} / 禁用 {{ stats.disabled }}</span></template>
+      </AppStatCard>
+      <AppStatCard label="在用数量" accent="green" :value="stats.active">
+        <template #icon>&#10003;</template>
+        <template #footer><span>启用状态的用户</span></template>
+      </AppStatCard>
+      <AppStatCard label="禁用数量" accent="red" :value="stats.disabled">
+        <template #icon>&#10005;</template>
+        <template #footer><span>停用状态的用户</span></template>
+      </AppStatCard>
+    </AppStatGrid>
 
     <div class="table-card">
       <div class="filter-bar">
@@ -122,7 +100,6 @@
         <el-button type="primary" @click="saveUser">&#30830;&#23450;</el-button>
       </template>
     </el-dialog>
-
 
     <el-dialog v-model="roleDialogVisible" :title="roleDialogTitle" width="520px" @open="loadRoleOptions">
       <el-form label-width="80px">
@@ -373,7 +350,6 @@ async function importEmployees() {
   }
 }
 
-
 async function loadRoleOptions() {
   try {
     const { data } = await request.get('/system/user/roles')
@@ -449,51 +425,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.user-mgmt-stats .stat-card {
-  padding: 20px 24px;
-}
-.user-mgmt-stats .stat-card::before {
-  display: none;
-}
-.user-mgmt-stats .stat-body {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-.user-mgmt-stats .stat-info {
-  flex: 1;
-  min-width: 0;
-}
-.user-mgmt-stats .stat-header {
-  margin-bottom: 8px;
-}
-.user-mgmt-stats .stat-value {
-  font-size: 30px;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-.user-mgmt-stats .stat-icon {
-  width: 54px;
-  height: 54px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  flex-shrink: 0;
-}
-.user-mgmt-stats .stat-card.blue .stat-icon {
-  background: #ecf5ff;
-  color: #409eff;
-}
-.user-mgmt-stats .stat-card.green .stat-icon {
-  background: #f0f9eb;
-  color: #67c23a;
-}
-.user-mgmt-stats .stat-card.red .stat-icon {
-  background: #fef0f0;
-  color: #f56c6c;
-}
 .table-card {
   padding: 20px 24px;
 }
@@ -503,9 +434,9 @@ onMounted(() => {
 .table-card :deep(.el-table) {
   font-size: 13px;
 }
+/* 表头底色交由 --el-table-header-bg-color 统一控制，
+   此处不再用 !important 硬编码，否则令牌层无法生效 */
 .table-card :deep(.el-table th.el-table__cell) {
-  background: #fafafa !important;
-  color: #606266;
   font-weight: 600;
 }
 .pagination-wrapper {

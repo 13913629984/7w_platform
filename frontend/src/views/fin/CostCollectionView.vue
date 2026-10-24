@@ -378,7 +378,7 @@ function handleCollect() {
 .bdg-chart { height: 280px; padding: 8px 4px 0; }
 .bdg-chart svg { width: 100%; height: 100%; }
 .bdg-grid { stroke: #ebeef5; stroke-width: 1; }
-.bdg-axis-label { fill: #909399; font-size: 11px; }
+.bdg-axis-label { fill: var(--pw-text-secondary); font-size: 11px; }
 .bdg-bar.material { fill: #409eff; }
 .bdg-bar.expense { fill: #e6a23c; }
 .bdg-trend-line { fill: none; stroke: #67c23a; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }

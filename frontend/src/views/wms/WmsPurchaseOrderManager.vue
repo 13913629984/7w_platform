@@ -13,7 +13,7 @@
       <div class="stat-card orange"><div class="stat-header"><span class="stat-title">待确认订单</span></div><div class="stat-value">{{ stats.pending }}</div><div class="stat-footer"><span style="color:#e6a23c">等待供应商确认</span></div></div>
       <div class="stat-card blue"><div class="stat-header"><span class="stat-title">已确认订单</span></div><div class="stat-value">{{ stats.confirmed }}</div><div class="stat-footer"><span style="color:#409eff">等待发货/入库</span></div></div>
       <div class="stat-card green"><div class="stat-header"><span class="stat-title">已入库</span></div><div class="stat-value">{{ stats.inbound }}</div><div class="stat-footer"><span style="color:#67c23a">入库验收完成</span></div></div>
-      <div class="stat-card purple"><div class="stat-header"><span class="stat-title">累计采购金额</span></div><div class="stat-value">¥{{ Number(stats.totalAmount || 0).toLocaleString() }}</div><div class="stat-footer"><span style="color:#909399">累计采购</span></div></div>
+      <div class="stat-card purple"><div class="stat-header"><span class="stat-title">累计采购金额</span></div><div class="stat-value">¥{{ Number(stats.totalAmount || 0).toLocaleString() }}</div><div class="stat-footer"><span style="color: var(--pw-text-secondary)">累计采购</span></div></div>
     </div>
 
     <div class="table-card purchase-order-table">
@@ -381,8 +381,8 @@ onMounted(() => loadData())
 .form-grid.two-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
 .order-items-header { display: flex; align-items: center; justify-content: space-between; margin: 8px 0 12px; }
 .order-items-header .el-button { min-width: 88px; }
-.order-items-header h4, .detail-subtitle { margin: 0; color: #303133; }
+.order-items-header h4, .detail-subtitle { margin: 0; color: var(--pw-text-primary); }
 .detail-subtitle { margin: 18px 0 12px; }
-.order-total { margin-top: 12px; text-align: right; color: #303133; font-weight: 600; }
+.order-total { margin-top: 12px; text-align: right; color: var(--pw-text-primary); font-weight: 600; }
 @media (max-width: 900px) { .form-grid.two-columns { grid-template-columns: 1fr; } }
 </style>

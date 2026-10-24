@@ -259,7 +259,7 @@ onMounted(loadData)
 .ov-line-chart { height: 300px; padding: 8px 4px 0; }
 .ov-line-chart svg { width: 100%; height: 100%; }
 .ov-grid { stroke: #ebeef5; stroke-width: 1; }
-.ov-axis-label { fill: #909399; font-size: 11px; }
+.ov-axis-label { fill: var(--pw-text-secondary); font-size: 11px; }
 .ov-line { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
 .ov-line.inbound { stroke: #409eff; }
 .ov-line.outbound { stroke: #67c23a; }
