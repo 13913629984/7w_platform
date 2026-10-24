@@ -129,46 +129,103 @@ foreach ($service in $services) {
 }
 
 # Vite dev server on port 4000.
+function Test-QwsFrontendHealthy {
+    try {
+        $resp = Invoke-WebRequest -Uri 'http://localhost:4000/' -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+        return ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 500)
+    } catch {
+        return $false
+    }
+}
+
+function Clear-QwsFrontendPort {
+    # 4000 端口若被上次残留的 vite 占用，vite 默认会静默漂移到 4001（访问 4000 就连不上）
+    $conns = Get-NetTCPConnection -LocalPort 4000 -State Listen -ErrorAction SilentlyContinue
+    if (-not $conns) { return $true }
+    $allCleared = $true
+    foreach ($conn in $conns) {
+        $proc = Get-CimInstance Win32_Process -Filter "ProcessId = $($conn.OwningProcess)" -ErrorAction SilentlyContinue
+        if ($proc -and ($proc.CommandLine -like '*vite*' -or $proc.CommandLine -like '*npm*run dev*')) {
+            Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
+            Write-Host ("[CLEAN] Stopped stale dev server PID={0} on port 4000" -f $conn.OwningProcess) -ForegroundColor Yellow
+        } else {
+            $name = if ($proc) { $proc.Name } else { 'unknown' }
+            Write-Host ("[ERROR] Port 4000 is held by PID={0} ({1}), not a vite process. Free it manually." -f $conn.OwningProcess, $name) -ForegroundColor Red
+            $allCleared = $false
+        }
+    }
+    if ($allCleared) { Start-Sleep -Seconds 1 }
+    return $allCleared
+}
+
+function Start-QwsFrontend {
+    $frontendRoot = Join-Path $PlatformRoot 'frontend'
+    $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
+
+    if (-not (Test-Path -LiteralPath $frontendRoot)) {
+        Write-Host ("[ERROR] Frontend directory not found: {0}" -f $frontendRoot) -ForegroundColor Red
+        return $false
+    }
+    if (-not $npm) {
+        Write-Host '[ERROR] npm.cmd was not found in PATH' -ForegroundColor Red
+        return $false
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $frontendRoot 'node_modules'))) {
+        Write-Host '[SETUP] frontend/node_modules not found, running npm install...' -ForegroundColor Cyan
+        Push-Location $frontendRoot
+        try {
+            & $npm.Source install
+            if ($LASTEXITCODE -ne 0) { throw ("npm install exited with code {0}" -f $LASTEXITCODE) }
+        } catch {
+            Write-Host ("[ERROR] npm install failed: {0}" -f $_.Exception.Message) -ForegroundColor Red
+            return $false
+        } finally {
+            Pop-Location
+        }
+    }
+
+    if (-not (Clear-QwsFrontendPort)) { return $false }
+
+    Write-Host '[START] frontend on port 4000' -ForegroundColor Cyan
+    # --strictPort：端口不可用时立刻失败，避免静默换到 4001
+    $null = Start-QwsBackgroundProcess -FilePath $npm.Source -Arguments @('run', 'dev', '--', '--strictPort') -WorkingDirectory $frontendRoot -StdOut (Join-Path $LogRoot 'frontend.out.log') -StdErr (Join-Path $LogRoot 'frontend.err.log')
+
+    if (-not (Wait-QwsPort -Port 4000 -Timeout $TimeoutSeconds)) {
+        Write-Host ("[ERROR] frontend did not listen on port 4000 within {0}s" -f $TimeoutSeconds) -ForegroundColor Red
+        $tail = Join-Path $LogRoot 'frontend.out.log'
+        if (Test-Path -LiteralPath $tail) {
+            Write-Host '        --- frontend.out.log (tail) ---' -ForegroundColor DarkGray
+            Get-Content -LiteralPath $tail -Tail 15 | ForEach-Object { Write-Host ("        " + $_) -ForegroundColor DarkGray }
+        }
+        return $false
+    }
+
+    # 端口开着不代表页面能访问，再确认一次 HTTP
+    for ($i = 0; $i -lt 20; $i++) {
+        if (Test-QwsFrontendHealthy) {
+            Write-Host '[READY] frontend is listening on port 4000' -ForegroundColor Green
+            return $true
+        }
+        Start-Sleep -Milliseconds 500
+    }
+
+    Write-Host '[ERROR] port 4000 is open but HTTP request failed. Check frontend.out.log' -ForegroundColor Red
+    return $false
+}
+
 if ($SkipFrontend) {
     Write-Host '[SKIP] frontend (requested)' -ForegroundColor Yellow
     $results['frontend'] = $true
 } elseif (Test-QwsPort -Port 4000) {
-    Write-Host '[SKIP] frontend already listening on port 4000' -ForegroundColor Yellow
-    $results['frontend'] = $true
-} else {
-    $frontendRoot = Join-Path $PlatformRoot 'frontend'
-    $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
-    if (-not (Test-Path -LiteralPath $frontendRoot)) {
-        Write-Host ("[ERROR] Frontend directory not found: {0}" -f $frontendRoot) -ForegroundColor Red
-        $results['frontend'] = $false
-    } elseif (-not $npm) {
-        Write-Host '[ERROR] npm.cmd was not found in PATH' -ForegroundColor Red
-        $results['frontend'] = $false
+    if (Test-QwsFrontendHealthy) {
+        Write-Host '[SKIP] frontend already healthy on port 4000' -ForegroundColor Yellow
+        $results['frontend'] = $true
     } else {
-        if (-not (Test-Path -LiteralPath (Join-Path $frontendRoot 'node_modules'))) {
-            Write-Host '[SETUP] frontend/node_modules not found, running npm install...' -ForegroundColor Cyan
-            Push-Location $frontendRoot
-            try {
-                & $npm.Source install
-                if ($LASTEXITCODE -ne 0) {
-                    throw ("npm install exited with code {0}" -f $LASTEXITCODE)
-                }
-            } finally {
-                Pop-Location
-            }
-        }
-
-        Write-Host '[START] frontend on port 4000' -ForegroundColor Cyan
-        $null = Start-QwsBackgroundProcess -FilePath $npm.Source -Arguments @('run', 'dev') -WorkingDirectory $frontendRoot -StdOut (Join-Path $LogRoot 'frontend.out.log') -StdErr (Join-Path $LogRoot 'frontend.err.log')
-
-        if (Wait-QwsPort -Port 4000 -Timeout $TimeoutSeconds) {
-            Write-Host '[READY] frontend is listening on port 4000' -ForegroundColor Green
-            $results['frontend'] = $true
-        } else {
-            Write-Host ("[ERROR] frontend did not listen on port 4000 within {0}s" -f $TimeoutSeconds) -ForegroundColor Red
-            $results['frontend'] = $false
-        }
+        Write-Host '[WARN] port 4000 is open but not serving HTTP; restarting it' -ForegroundColor Yellow
+        $results['frontend'] = Start-QwsFrontend
     }
+} else {
+    $results['frontend'] = Start-QwsFrontend
 }
 
 Write-Host ''

@@ -1,5 +1,5 @@
 ﻿<template>
-  <section>
+  <section class="table-page layout-page">
     <div class="sub-page-header">
       <div>
         <h2>角色管理</h2>

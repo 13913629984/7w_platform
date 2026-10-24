@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="app-layout" :class="{ 'dashboard-home': route.path === '/dashboard' }">
+  <div class="app-layout" :class="{ 'sidebar-collapsed': collapsed }">
     <aside class="sidebar">
       <div class="logo-area">
         <div class="logo-icon">七</div>
@@ -57,16 +57,16 @@
     <main class="main-content">
       <header class="header">
         <div class="header-left">
-          <div class="collapse-btn">☰</div>
+          <button class="collapse-btn" type="button" aria-label="折叠菜单" @click="toggleSidebar">☰</button>
           <div class="breadcrumb"><span>{{ route.path === '/dashboard' ? '工作台' : currentSystem }}</span><template v-if="route.path !== '/dashboard'"> / <span>{{ route.meta.title }}</span></template></div>
         </div>
         <div class="header-right">
-          <span style="font-size:13px;color:#909399">2026年6月16日 周二</span>
+          <span class="header-date">{{ todayLabel }}</span>
           <div class="notification">🔔</div>
-          <el-button link @click="logout" style="color:#909399;margin:0 10px;">退出登录</el-button>
-          <div class="user-info" style="display:flex;align-items:center;gap:8px;">
-            <div class="avatar">{{ auth.nickname.charAt(0) }}</div>
-            <span style="font-size:14px;color:#606266;">{{ auth.nickname }}</span>
+          <el-button link class="logout-btn" @click="logout">退出登录</el-button>
+          <div class="user-info">
+            <div class="avatar">{{ avatarChar }}</div>
+            <span class="user-name">{{ auth.nickname }}</span>
           </div>
         </div>
       </header>
@@ -78,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { menus, type AppMenu } from '@/router/menus'
 import { useAuthStore } from '@/stores/auth'
@@ -87,12 +87,27 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
+/** PC 端负责：侧边栏仅支持折叠为窄轨道 */
+const collapsed = ref(localStorage.getItem('sidebar-collapsed') === '1')
+
 const systemMenus = computed(() => menus.filter((menu) => menu.children?.length && auth.hasPermission(menu.permission)))
 const currentMenu = computed(() => systemMenus.value.find((menu) => route.path.startsWith(menu.path)))
 const currentSystem = computed(() => currentMenu.value?.title || '统一门户')
+const avatarChar = computed(() => (auth.nickname || auth.username || '用').charAt(0))
+
+const todayLabel = computed(() => {
+  const now = new Date()
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  return `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${weekdays[now.getDay()]}`
+})
 
 function firstChildPath(menu: AppMenu) {
   return menu.children?.[0]?.path || menu.path
+}
+
+function toggleSidebar() {
+  collapsed.value = !collapsed.value
+  localStorage.setItem('sidebar-collapsed', collapsed.value ? '1' : '0')
 }
 
 function logout() {

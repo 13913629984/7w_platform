@@ -1,5 +1,5 @@
 <template>
-  <section>
+  <section class="table-page">
     <div class="sub-page-header">
       <div>
         <h2>&#29992;&#25143;&#31649;&#29702;</h2>

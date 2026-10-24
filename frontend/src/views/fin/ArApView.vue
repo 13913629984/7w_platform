@@ -1,5 +1,5 @@
 <template>
-  <section>
+  <section class="table-page">
     <div class="sub-page-header">
       <div>
         <h2>应收应付管理</h2>

@@ -1,5 +1,5 @@
 <template>
-  <section>
+  <section class="table-page">
     <div class="sub-page-header">
       <div>
         <h2>仓库管理</h2>

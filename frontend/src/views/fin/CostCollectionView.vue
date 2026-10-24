@@ -1,5 +1,5 @@
 <template>
-  <section>
+  <section class="scroll-page">
     <div class="sub-page-header">
       <div>
         <h2>成本归集</h2>

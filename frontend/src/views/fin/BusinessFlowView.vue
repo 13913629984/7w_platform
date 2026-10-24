@@ -249,12 +249,12 @@ function handleDetail() {
 .core-flow-steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .core-flow-step { background: rgba(255,255,255,.18); border-radius: 6px; padding: 6px 14px; font-size: 13px; }
 
-.closure-grid { display: grid; grid-template-columns: repeat(3, max-content); justify-content: center; gap: 16px 40px; padding: 8px 0; }
-.closure-grid .flow-box { width: 150px; }
+.closure-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, max-content)); justify-content: center; gap: 16px 24px; padding: 8px 0; }
+.closure-grid .flow-box { width: 150px; max-width: 100%; }
 
 .expense-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 
-.formula-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 8px 0; }
+.formula-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; padding: 8px 0; }
 .formula-box { border-radius: 10px; padding: 16px 18px; border-left: 4px solid; }
 .formula-box.blue { background: #ecf5ff; border-color: #409eff; }
 .formula-box.green { background: #f0f9eb; border-color: #67c23a; }

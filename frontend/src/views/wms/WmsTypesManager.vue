@@ -1,5 +1,5 @@
 <template>
-  <section>
+  <section class="table-page layout-page">
     <div class="sub-page-header">
       <div>
         <h2>类型管理</h2>
@@ -136,7 +136,7 @@
 </template>
 
 <style scoped>
-.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 16px 0; }
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 16px 0; }
 .stat-card { background: #fff; border-radius: 8px; padding: 16px 20px; border-top: 3px solid #409eff; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
 .stat-card.blue { border-top-color: #409eff; }
 .stat-card.green { border-top-color: #67c23a; }
@@ -147,17 +147,22 @@
 .stat-icon { font-size: 22px; }
 .stat-value { font-size: 28px; font-weight: 600; margin-top: 8px; color: #303133; }
 .stat-footer { color: #909399; font-size: 12px; margin-top: 4px; }
-.wms-type-layout { display: grid; grid-template-columns: 360px 1fr; gap: 16px; }
-.wms-type-tree-panel, .wms-type-form-panel { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); min-height: 480px; }
+.wms-type-layout { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 16px; }
+.wms-type-tree-panel, .wms-type-form-panel { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); min-height: 480px; min-width: 0; }
 .wms-type-panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; }
 .wms-type-title { font-size: 16px; font-weight: 600; color: #303133; }
 .wms-tree-node { display:flex; align-items:center; gap: 8px; flex: 1; }
 .wms-tree-label { flex: 1; }
 .wms-type-tree { max-height: 600px; overflow: auto; }
 .wms-type-form-content { max-width: 720px; }
-.sub-page-header { display:flex; justify-content:space-between; align-items:flex-start; padding: 8px 0 16px; }
+.sub-page-header { display:flex; justify-content:space-between; align-items:flex-start; gap: 12px; flex-wrap: wrap; padding: 8px 0 16px; }
 .sub-page-header h2 { margin: 0; font-size: 22px; color: #303133; }
 .page-desc { color: #909399; font-size: 13px; margin-top: 4px; }
+@media (max-width: 1100px) {
+  .wms-type-layout { grid-template-columns: 1fr; }
+  .wms-type-tree-panel, .wms-type-form-panel { min-height: auto; }
+  .wms-type-form-content { max-width: none; }
+}
 </style>
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'

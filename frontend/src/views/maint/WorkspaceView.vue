@@ -216,4 +216,17 @@ onMounted(() => loadData())
 .dist-value { width: 36px; text-align: right; font-weight: 600; color: #303133; }
 .maint-progress { flex: 1; height: 8px; background: #ebeef5; border-radius: 999px; overflow: hidden; }
 .maint-progress span { display: block; height: 100%; border-radius: inherit; transition: width .3s; }
+
+/* 窄屏：7 列柱状图压缩间距与柱宽，避免横向溢出 */
+@media (max-width: 768px) {
+  .maint-trend-chart { gap: 6px; padding: 14px 6px 28px; }
+  .trend-bars { gap: 3px; }
+  .trend-bar { width: 11px; }
+  .trend-day em { font-size: 10px; }
+}
+@media (max-width: 420px) {
+  .maint-trend-chart { gap: 4px; padding: 12px 4px 26px; }
+  .trend-bar { width: 9px; }
+  .trend-day em { font-size: 9px; letter-spacing: -0.3px; }
+}
 </style>

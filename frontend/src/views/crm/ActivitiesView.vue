@@ -1,5 +1,5 @@
 <template>
-  <section>
+  <section class="table-page">
     <div class="sub-page-header">
       <div>
         <h2>跟进活动</h2>
@@ -443,6 +443,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 .header-actions {
   display: flex;
@@ -511,7 +512,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 16px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 .filter-left {
   display: flex;

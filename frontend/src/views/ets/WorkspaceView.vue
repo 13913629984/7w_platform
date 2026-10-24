@@ -302,4 +302,18 @@ onMounted(() => loadData())
   font-size: 13px;
   padding: 12px 0;
 }
+
+/* 窄屏：7 列柱状图压缩间距，避免横向溢出 */
+@media (max-width: 768px) {
+  .ets-trend-chart { gap: 6px; padding: 4px 4px 0 0; }
+  .ets-y-axis { width: 30px; font-size: 10px; }
+  .ets-trend-plot { gap: 4px; padding: 0 4px; }
+  .ets-trend-bar { width: 14px; }
+  .ets-trend-value, .ets-trend-col em { font-size: 10px; }
+}
+@media (max-width: 420px) {
+  .ets-trend-plot { gap: 2px; padding: 0 2px; }
+  .ets-trend-bar { width: 11px; }
+  .ets-trend-value { display: none; }
+}
 </style>

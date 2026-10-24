@@ -195,6 +195,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
@@ -233,7 +234,7 @@ onMounted(() => {
 
 .charts-row, .lists-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
 }

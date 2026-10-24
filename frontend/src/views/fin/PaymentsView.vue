@@ -1,5 +1,5 @@
 <template>
-  <section>
+  <section class="table-page">
     <div class="sub-page-header">
       <div>
         <h2>付款管理</h2>
@@ -298,7 +298,7 @@ function handleRefresh() {
 
 <style scoped>
 .flow-card { margin-bottom: 24px; }
-.flow-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.flow-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
 .flow-step { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--border-color); border-radius: 10px; background: #fafbfc; }
 .flow-step-no { width: 28px; height: 28px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
 .flow-step-no.orange { background: #e6a23c; }
@@ -309,5 +309,5 @@ function handleRefresh() {
 .flow-step-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
 .flow-step-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
 .flow-step-count { font-size: 20px; font-weight: 700; color: var(--text-primary); }
-.pagination-bar { display: flex; justify-content: flex-end; margin-top: 16px; }
+.pagination-bar { display: flex; justify-content: flex-end; flex-wrap: wrap; margin-top: 16px; }
 </style>
