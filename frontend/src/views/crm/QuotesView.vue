@@ -3,60 +3,11 @@
     <div class="sub-page-header">
       <div>
         <h2>报价管理</h2>
-        <p class="page-desc">维护产品报价信息，跟踪品牌与客户报价分布。</p>
+        <p class="page-desc">维护产品报价信息，按客户、品牌、型号快速检索。</p>
       </div>
       <div class="header-actions">
         <el-button plain :icon="Refresh" @click="loadData">刷新</el-button>
         <el-button type="primary" :icon="Plus" @click="openAdd">新增报价</el-button>
-      </div>
-    </div>
-
-    <div class="stats-row">
-      <div class="stat-card blue">
-        <div class="stat-header"><span class="stat-title">报价总数</span><div class="stat-icon">🧾</div></div>
-        <div class="stat-value">{{ stats.total }}</div>
-        <div class="stat-footer">全部报价单</div>
-      </div>
-      <div class="stat-card teal">
-        <div class="stat-header"><span class="stat-title">客户数</span><div class="stat-icon">🏢</div></div>
-        <div class="stat-value">{{ stats.customerCount }}个客户</div>
-        <div class="stat-footer">报价覆盖</div>
-      </div>
-      <div class="stat-card purple">
-        <div class="stat-header"><span class="stat-title">品牌数</span><div class="stat-icon">🔖</div></div>
-        <div class="stat-value">{{ stats.brandCount }}个品牌</div>
-        <div class="stat-footer">涉及品牌</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-header"><span class="stat-title">报价总额</span><div class="stat-icon">💰</div></div>
-        <div class="stat-value">{{ formatAmount(stats.totalAmount) }}</div>
-        <div class="stat-footer">累计报价金额</div>
-      </div>
-      <div class="stat-card orange">
-        <div class="stat-header"><span class="stat-title">平均单价</span><div class="stat-icon">📊</div></div>
-        <div class="stat-value">{{ formatAmount(stats.avgPrice) }}</div>
-        <div class="stat-footer">单条均价</div>
-      </div>
-      <div class="stat-card blue">
-        <div class="stat-header"><span class="stat-title">本月新增</span><div class="stat-icon">📈</div></div>
-        <div class="stat-value">{{ stats.monthAdded }}</div>
-        <div class="stat-footer">本月报价</div>
-      </div>
-    </div>
-
-    <div v-if="brandDistribution.length" class="table-card brand-card">
-      <div class="brand-header">
-        <h3>品牌分布</h3>
-        <span class="brand-hint">按报价条数排序</span>
-      </div>
-      <div class="brand-bars">
-        <div v-for="item in brandDistribution" :key="item.brand" class="brand-bar-row">
-          <span class="brand-name" :title="item.brand">{{ item.brand }}</span>
-          <div class="brand-track">
-            <div class="brand-fill" :style="{ width: barWidth(item.count) }"></div>
-          </div>
-          <span class="brand-count">{{ item.count }}</span>
-        </div>
       </div>
     </div>
 
@@ -188,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Delete, Search, Refresh } from '@element-plus/icons-vue'
 import {
@@ -198,7 +149,6 @@ import {
   listQuoteBrands,
   listQuotes,
   updateQuote,
-  type BrandDistribution,
   type QuoteItem,
 } from '@/api/crm/quote'
 
@@ -211,7 +161,6 @@ const page = ref(1)
 const pageSize = ref(10)
 const selected = ref<Quote[]>([])
 const brandOptions = ref<string[]>([])
-const brandDistribution = ref<BrandDistribution[]>([])
 
 const filters = reactive<{ keyword: string; customerName: string; brand: string; model: string }>({
   keyword: '',
@@ -219,24 +168,6 @@ const filters = reactive<{ keyword: string; customerName: string; brand: string;
   brand: '',
   model: '',
 })
-
-const stats = reactive({
-  total: 0,
-  customerCount: 0,
-  brandCount: 0,
-  totalAmount: 0,
-  avgPrice: 0,
-  monthAdded: 0,
-})
-
-const maxBrandCount = computed(() => {
-  return brandDistribution.value.reduce((max, item) => Math.max(max, item.count), 0) || 1
-})
-
-function barWidth(count: number) {
-  const ratio = (count / maxBrandCount.value) * 100
-  return `${Math.max(ratio, 4)}%`
-}
 
 function formatAmount(value?: number | null) {
   if (value == null) return '--'
@@ -260,15 +191,6 @@ async function loadData() {
     }
     rows.value = res.data.rows || []
     total.value = res.data.total || 0
-    if (res.data.stats) {
-      stats.total = res.data.stats.total ?? 0
-      stats.customerCount = res.data.stats.customerCount ?? 0
-      stats.brandCount = res.data.stats.brandCount ?? 0
-      stats.totalAmount = res.data.stats.totalAmount ?? 0
-      stats.avgPrice = res.data.stats.avgPrice ?? 0
-      stats.monthAdded = res.data.stats.monthAdded ?? 0
-      brandDistribution.value = res.data.stats.brandDistribution || []
-    }
   } catch (error: any) {
     ElMessage.error(error?.message || '加载报价失败')
   } finally {
@@ -442,112 +364,6 @@ onMounted(() => {
   gap: 8px;
   flex-shrink: 0;
 }
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-.stat-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, .04);
-  position: relative;
-  overflow: hidden;
-}
-.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-.stat-card.blue::before { background: linear-gradient(90deg, #409eff, #66b1ff); }
-.stat-card.green::before { background: linear-gradient(90deg, #67c23a, #85ce61); }
-.stat-card.orange::before { background: linear-gradient(90deg, #e6a23c, #f0c78a); }
-.stat-card.purple::before { background: linear-gradient(90deg, #764ba2, #667eea); }
-.stat-card.teal::before { background: linear-gradient(90deg, #13c2c2, #5cdbd3); }
-.stat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.stat-title { font-size: 14px; color: #909399; min-width: 0; flex: 1; }
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  flex-shrink: 0;
-}
-.stat-card.blue .stat-icon { background: #ecf5ff; }
-.stat-card.green .stat-icon { background: #f0f9eb; }
-.stat-card.orange .stat-icon { background: #fdf6ec; }
-.stat-card.purple .stat-icon { background: #f4f0ff; }
-.stat-card.teal .stat-icon { background: #e6fffb; }
-.stat-value { font-size: 28px; font-weight: 700; color: #303133; margin-bottom: 8px; }
-.stat-footer { font-size: 12px; color: #909399; }
-
-.table-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, .04);
-  min-width: 0;
-}
-.table-card .el-table { width: 100%; }
-.brand-card { margin-bottom: 24px; }
-.brand-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.brand-header h3 { margin: 0; font-size: 15px; color: #303133; }
-.brand-hint { font-size: 12px; color: #909399; }
-.brand-bars {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 12px 32px;
-}
-.brand-bar-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-.brand-name {
-  width: 96px;
-  flex-shrink: 0;
-  font-size: 13px;
-  color: #606266;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.brand-track {
-  flex: 1;
-  height: 10px;
-  min-width: 0;
-  background: #f0f2f5;
-  border-radius: 6px;
-  overflow: hidden;
-}
-.brand-fill {
-  height: 100%;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-  transition: width .3s ease;
-}
-.brand-count {
-  width: 40px;
-  flex-shrink: 0;
-  text-align: right;
-  font-size: 13px;
-  font-weight: 600;
-  color: #303133;
-}
 .quote-customer { font-weight: 600; color: #303133; }
 .quote-price { font-weight: 600; color: #e6a23c; }
 .filter-bar {
@@ -579,7 +395,7 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .stats-row { grid-template-columns: 1fr; }
-  .brand-bars { grid-template-columns: 1fr; }
+  .sub-page-header { align-items: stretch; }
+  .header-actions { justify-content: flex-end; }
 }
 </style>
