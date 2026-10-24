@@ -22,7 +22,9 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -216,6 +218,29 @@ public class CrmDealService {
         }
         deal.setCustomerId(customerId);
         deal.setCustomerName(StringUtils.hasText(customerName) ? customerName.trim() : null);
+    }
+
+    /**
+     * 按销售阶段统计商机数量，供首页销售漏斗使用。
+     *
+     * <p>阶段顺序固定按 STAGES（真实业务流程顺序）返回，避免前端自己维护一份
+d     * 顺序而日后业务加阶段时两边不一致。没有商机的阶段也返回 0，
+     * 保证漏斗的层级形状稳定、不会因为某阶段为空而突然塌陷。
+     */
+    public List<Map<String, Object>> stageCounts() {
+        List<CrmDeal> all = dealMapper.selectList(null);
+        Map<String, Long> byStage = all.stream()
+                .filter(d -> StringUtils.hasText(d.getStage()))
+                .collect(Collectors.groupingBy(CrmDeal::getStage, Collectors.counting()));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (String stage : STAGES) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("stage", stage);
+            item.put("count", byStage.getOrDefault(stage, 0L));
+            result.add(item);
+        }
+        return result;
     }
 
     private Map<String, Object> computeStats() {

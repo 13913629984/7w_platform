@@ -44,6 +44,12 @@ public class DealController {
         return ApiResult.ok(dealService.customerOptions());
     }
 
+    /** 按销售阶段统计商机数量，供首页销售漏斗使用 */
+    @GetMapping("/stage-counts")
+    public ApiResult<List<Map<String, Object>>> stageCounts() {
+        return ApiResult.ok(dealService.stageCounts());
+    }
+
     @GetMapping("/{id}")
     public ApiResult<DealVO> detail(@PathVariable Long id) {
         try {
