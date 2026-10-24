@@ -2,8 +2,8 @@
   <div class="app-layout" :class="{ 'sidebar-collapsed': collapsed }">
     <aside class="sidebar">
       <div class="logo-area">
-        <div class="logo-icon">七</div>
-        <div class="logo-text">七维空间平台</div>
+        <div class="logo-icon">信</div>
+        <div class="logo-text">信息化平台</div>
       </div>
 
       <nav class="menu-section">

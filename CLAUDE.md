@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**七维空间信息化平台 (QWS Platform)** — an enterprise information management platform with multiple subsystems (CRM, WMS, Maintenance, ETS, Finance, System Admin). Built as a SPA + microservices architecture.
+**信息化平台 (QWS Platform)** — an enterprise information management platform with multiple subsystems (CRM, WMS, Maintenance, ETS, Finance, System Admin). Built as a SPA + microservices architecture.
 
 - **Frontend**: Vue 3 + TypeScript + Vite 6 + Pinia + Vue Router 4 + Element Plus
 - **Backend**: Spring Boot 3.3 + Spring Cloud Gateway 2023.0 + MyBatis Plus 3.5 + Nacos Discovery

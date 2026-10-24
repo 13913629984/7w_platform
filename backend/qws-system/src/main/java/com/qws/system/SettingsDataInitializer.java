@@ -84,9 +84,9 @@ public class SettingsDataInitializer {
 
         // {key, 名称, 值, 类型, 选项, 分组, 说明, 是否内置, 排序}
         Object[][] seeds = new Object[][]{
-                {"sys.name", "系统名称", "七维空间信息化平台", "text", null, "基础设置", "显示在登录页与页面标题", 1, 10},
-                {"sys.short_name", "系统简称", "QWS", "text", null, "基础设置", "用于侧边栏折叠态与浏览器标签", 1, 20},
-                {"sys.copyright", "版权信息", "© 2026 七维空间科技", "text", null, "基础设置", "显示在页面底部", 1, 30},
+                {"sys.name", "系统名称", "信息化平台", "text", null, "基础设置", "显示在登录页与页面标题", 1, 10},
+                {"sys.short_name", "系统简称", "XXHPT", "text", null, "基础设置", "用于侧边栏折叠态与浏览器标签", 1, 20},
+                {"sys.copyright", "版权信息", "© 2026 信息化平台", "text", null, "基础设置", "显示在页面底部", 1, 30},
                 {"sys.session_timeout", "会话超时（分钟）", "120", "number", null, "基础设置", "JWT 有效期，修改后需重新登录生效", 1, 40},
                 {"sys.page_size", "默认分页条数", "10", "select", "10,20,50,100", "基础设置", "列表页默认每页展示条数", 1, 50},
                 {"sys.theme", "默认主题", "blue", "select", "blue,green,dark", "外观设置", "登录后默认配色方案", 0, 10},

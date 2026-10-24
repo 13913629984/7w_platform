@@ -8,8 +8,8 @@
 
     <view class="login-content">
       <view class="logo-section">
-        <view class="logo-icon">七</view>
-        <view class="logo-title">七维空间</view>
+        <view class="logo-icon">信</view>
+        <view class="logo-title">信息化平台</view>
         <view class="logo-subtitle">企业信息化平台</view>
       </view>
 
@@ -80,7 +80,7 @@
     </view>
 
     <view class="login-footer">
-      <text class="footer-text">© 2026 七维空间 版权所有</text>
+      <text class="footer-text">© 2026 信息化平台 版权所有</text>
     </view>
   </view>
 </template>

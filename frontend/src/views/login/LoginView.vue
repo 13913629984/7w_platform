@@ -1,7 +1,7 @@
 ﻿<template>
   <div class="login-page">
     <el-card class="login-card" shadow="always">
-      <h1 class="login-title">七维空间信息化平台</h1>
+      <h1 class="login-title">信息化平台</h1>
       <p class="login-subtitle">统一身份认证 · 单点登录入口</p>
       <el-form :model="form" label-position="top" @keyup.enter="submit">
         <el-form-item label="用户名">

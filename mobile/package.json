@@ -1,7 +1,7 @@
 {
   "name": "qws-mobile",
   "version": "1.0.0",
-  "description": "七维空间信息化平台 - 移动端",
+  "description": "信息化平台 - 移动端",
   "scripts": {
     "dev:h5": "uni",
     "build:h5": "uni build",

@@ -542,8 +542,12 @@ body { overflow: hidden; }
 .org-tree-card > .org-tree { flex: 1 1 auto; min-height: 0; overflow: auto; }
 .org-tree-card > .el-input,
 .org-tree-card > .card-header { flex: 0 0 auto; }
-.org-employee-card { display: flex; flex-direction: column; min-height: 0; }
-/* 组织页右侧整体滚动（org-main 为滚动容器），员工表格保持自然高度，避免被压成 0 */
+/* 组织页右侧整体滚动（org-main 为滚动容器），员工表格保持自然高度。
+   注意：org-main 是 flex 列容器，子卡片必须禁止收缩（flex-shrink: 0），
+   否则统计卡/详情卡/员工卡会被压缩到容器剩余高度，表格与分页溢出卡片背景区域。 */
+.org-page-layout > .org-main > * { flex: 0 0 auto; }
+.org-employee-card { flex: 0 0 auto; display: flex; flex-direction: column; min-height: 0; }
+.org-employee-card > .filter-bar { flex: 0 0 auto; }
 .org-employee-card > .el-table { flex: 0 0 auto; }
 .org-employee-card > .org-pagination,
 .org-employee-card > .el-pagination { flex: 0 0 auto; }
@@ -632,9 +636,25 @@ body { overflow: hidden; }
   min-height: 0;
   overflow-y: auto;
 }
-/* 消息框同样限高 */
-.el-message-box { max-height: calc(100vh - 48px); display: flex; flex-direction: column; }
-.el-message-box__content { overflow-y: auto; }
+/* 消息框同样限高。
+   注意：不要给 .el-message-box 加 display:flex，否则它会从 inline-block 变成块级元素，
+   Element Plus 依赖的「text-align:center + vertical-align:middle」居中会失效（弹框跑到左上角）。
+   居中改由遮罩层 flex 实现，弹框自身仍用 flex 列布局以支持内容滚动。 */
+.is-message-box .el-overlay-message-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.is-message-box .el-overlay-message-box::after { display: none; }
+.el-message-box {
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  margin: auto;
+}
+.el-message-box > .el-message-box__header,
+.el-message-box > .el-message-box__btns { flex: 0 0 auto; }
+.el-message-box__content { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
 
 /* ---------- PC 固定高度下的密度优化：压缩统计卡与页头高度，给表格更多空间 ---------- */
 .page-content > section.table-page > .stats-row { margin-bottom: 16px; }
@@ -659,4 +679,22 @@ body { overflow: hidden; }
   .page-content > section.table-page > .stats-row .stat-value { font-size: 19px; }
   .page-content > section.table-page > .stats-row .stat-header { margin-bottom: 4px; }
   .page-content > section.table-page > .stats-row .stat-footer { margin-top: 0; }
+}
+
+/* 组织页单列布局（<=1200px）：左右不再并排，改为整页纵向滚动。
+   否则 org-main 只剩极小的内部滚动区，员工表格与分页会被截在卡片外。
+   注意必须放在文件末尾覆盖前面 .layout-page 的 height:100%/overflow:hidden。 */
+@media (max-width: 1200px) {
+  .page-content:has(> section.org-layout-page) { overflow-y: auto; }
+  .page-content > section.org-layout-page {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+  .page-content > section.org-layout-page > .org-page-layout {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+  .org-page-layout > .org-main { overflow: visible; }
+  .org-tree-card > .org-tree { max-height: 320px; }
 }
