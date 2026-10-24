@@ -15,9 +15,14 @@
       </div>
     </div>
 
-    <div class="section-title">子系统入口</div>
-    <div class="systems-grid">
-      <div v-for="system in visibleSystems" :key="system.name" class="system-card" @click="router.push(system.path)">
+    <div class="section-title-row">
+      <div class="section-title">子系统入口</div>
+      <button v-if="needsMore" type="button" class="systems-more-btn" :aria-expanded="expanded" @click="expanded = !expanded">
+        {{ expanded ? '收起' : `更多... (${hiddenCount})` }}
+      </button>
+    </div>
+    <div ref="gridRef" class="systems-grid" :style="{ '--systems-cols': gridCols }">
+      <div v-for="system in displayedSystems" :key="system.name" class="system-card" @click="router.push(system.path)">
         <div class="system-icon-box" :class="system.bg">{{ system.icon }}</div>
         <h3>{{ system.name }}</h3>
         <p>{{ system.desc }}</p>
@@ -100,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -124,6 +129,45 @@ const systems = [
 ]
 
 const visibleSystems = computed(() => systems.filter((system) => auth.hasPermission(system.permission)))
+
+/* 子系统入口只展示一行，其余收进「更多…」。行列数按网格实际宽度计算，
+   与 CSS 的 minmax(300px) 最小卡片宽保持一致（含 20px 间隙）。 */
+const GRID_MIN_CARD = 250
+const GRID_GAP = 20
+const gridRef = ref<HTMLElement | null>(null)
+const columns = ref(4)
+const expanded = ref(false)
+let gridObserver: ResizeObserver | null = null
+
+function computeColumns(width: number) {
+  const count = Math.floor((width + GRID_GAP) / (GRID_MIN_CARD + GRID_GAP))
+  return Math.max(count || 1, 1)
+}
+
+const needsMore = computed(() => visibleSystems.value.length > columns.value)
+/* 实际渲染列数：用户权限少时不要把卡片拉到空轨道上 */
+const gridCols = computed(() => Math.max(Math.min(columns.value, visibleSystems.value.length), 1))
+const displayedSystems = computed(() => {
+  const list = visibleSystems.value
+  if (!needsMore.value || expanded.value) return list
+  return list.slice(0, columns.value)
+})
+const hiddenCount = computed(() => Math.max(visibleSystems.value.length - columns.value, 0))
+
+onMounted(() => {
+  if (!gridRef.value) return
+  const apply = () => {
+    if (gridRef.value) columns.value = computeColumns(gridRef.value.clientWidth)
+  }
+  apply()
+  gridObserver = new ResizeObserver(apply)
+  gridObserver.observe(gridRef.value)
+})
+
+onBeforeUnmount(() => {
+  gridObserver?.disconnect()
+  gridObserver = null
+})
 
 const monthly = [
   { month: '1月', inbound: '58%', outbound: '48%' },

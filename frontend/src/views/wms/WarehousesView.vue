@@ -87,7 +87,7 @@
       </div>
     </div>
 
-    <el-dialog v-model="formVisible" :title="formMode === 'add' ? '新增仓库' : '编辑仓库'" width="760px" :close-on-click-modal="false" @closed="resetForm">
+    <el-dialog v-model="formVisible" :title="formMode === 'add' ? '新增仓库' : '编辑仓库'" width="900px" :close-on-click-modal="false" @closed="resetForm">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="12"><el-form-item label="仓库编码" prop="code"><el-input v-model="form.code" :disabled="formMode === 'edit'" maxlength="50" /></el-form-item></el-col>

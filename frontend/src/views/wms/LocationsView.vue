@@ -90,7 +90,7 @@
       </div>
     </div>
 
-    <el-dialog v-model="formVisible" :title="formMode === 'add' ? '新增库位' : '编辑库位'" width="760px" :close-on-click-modal="false" @closed="resetForm">
+    <el-dialog v-model="formVisible" :title="formMode === 'add' ? '新增库位' : '编辑库位'" width="900px" :close-on-click-modal="false" @closed="resetForm">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="12"><el-form-item label="库位编码" prop="code"><el-input v-model="form.code" :disabled="formMode === 'edit'" maxlength="50" /></el-form-item></el-col>

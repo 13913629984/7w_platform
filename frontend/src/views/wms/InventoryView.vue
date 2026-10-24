@@ -69,7 +69,7 @@
       </div>
     </div>
 
-    <el-dialog v-model="formVisible" :title="formMode === 'add' ? '新增库存' : '编辑库存'" width="760px" :close-on-click-modal="false" @closed="resetForm">
+    <el-dialog v-model="formVisible" :title="formMode === 'add' ? '新增库存' : '编辑库存'" width="900px" :close-on-click-modal="false" @closed="resetForm">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="12"><el-form-item label="物料" prop="materialId"><el-select v-model="form.materialId" filterable style="width:100%" @change="onMaterialChange"><el-option v-for="item in materials" :key="item.id" :label="`${item.sku} / ${item.name}`" :value="item.id!" /></el-select></el-form-item></el-col>

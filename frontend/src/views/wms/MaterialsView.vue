@@ -122,7 +122,7 @@
       </div>
     </div>
 
-    <el-dialog v-model="formVisible" :title="formMode === 'add' ? '新增物料' : '编辑物料'" width="760px" :close-on-click-modal="false" @closed="resetForm">
+    <el-dialog v-model="formVisible" :title="formMode === 'add' ? '新增物料' : '编辑物料'" width="900px" :close-on-click-modal="false" @closed="resetForm">
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px" label-position="right">
         <el-row :gutter="20">
           <el-col :span="12">
