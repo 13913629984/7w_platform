@@ -1,6 +1,8 @@
 package com.qws.system;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.dict.DictDeleteRequest;
 import com.qws.common.dto.dict.DictItemRequest;
@@ -45,6 +47,7 @@ public class DictController {
     }
 
     @PostMapping("/type/create")
+    @Audit(module = "SYS", action = ActionType.CREATE, target = "字典类型")
     public ApiResult<DictTypeVO> createType(@RequestBody DictTypeRequest request) {
         try {
             return ApiResult.ok(dictService.createType(request));
@@ -54,6 +57,7 @@ public class DictController {
     }
 
     @PostMapping("/type/update")
+    @Audit(module = "SYS", action = ActionType.UPDATE, target = "字典类型")
     public ApiResult<DictTypeVO> updateType(@RequestBody DictTypeRequest request) {
         try {
             return ApiResult.ok(dictService.updateType(request));
@@ -63,6 +67,7 @@ public class DictController {
     }
 
     @PostMapping("/type/delete")
+    @Audit(module = "SYS", action = ActionType.DELETE, target = "字典类型")
     public ApiResult<Void> deleteType(@RequestBody DictDeleteRequest request) {
         try {
             dictService.deleteType(request);
@@ -73,6 +78,7 @@ public class DictController {
     }
 
     @PostMapping("/item/create")
+    @Audit(module = "SYS", action = ActionType.CREATE, target = "字典项")
     public ApiResult<DictItemVO> createItem(@RequestBody DictItemRequest request) {
         try {
             return ApiResult.ok(dictService.createItem(request));
@@ -82,6 +88,7 @@ public class DictController {
     }
 
     @PostMapping("/item/update")
+    @Audit(module = "SYS", action = ActionType.UPDATE, target = "字典项")
     public ApiResult<DictItemVO> updateItem(@RequestBody DictItemRequest request) {
         try {
             return ApiResult.ok(dictService.updateItem(request));
@@ -91,6 +98,7 @@ public class DictController {
     }
 
     @PostMapping("/item/delete")
+    @Audit(module = "SYS", action = ActionType.DELETE, target = "字典项")
     public ApiResult<Void> deleteItem(@RequestBody DictDeleteRequest request) {
         try {
             dictService.deleteItem(request);

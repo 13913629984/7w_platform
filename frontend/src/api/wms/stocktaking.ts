@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { unwrapList } from '@/api/list'
 
 export type StockTakingStatus = 'pending' | 'processing' | 'pending_review' | 'completed'
 export type StockTakingType = 'full' | 'cycle' | 'spot'
@@ -92,7 +93,7 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<Ap
 }
 
 export function listStockTakingOrders(params: StockTakingQuery = {}) {
-  return unwrap<StockTakingOrder[]>(request.get('/wms/stocktaking/list', { params }))
+  return unwrapList<StockTakingOrder>(request.get('/wms/stocktaking/list', { params }))
 }
 
 export function getStockTakingStats() {

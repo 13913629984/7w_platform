@@ -1,6 +1,8 @@
 package com.qws.crm;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.lead.LeadConvertRequest;
 import com.qws.common.dto.lead.LeadDeleteRequest;
@@ -46,6 +48,7 @@ public class LeadController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "CRM", action = ActionType.CREATE, target = "线索")
     public ApiResult<LeadVO> create(@RequestBody LeadRequest request) {
         try {
             return ApiResult.ok(leadService.create(request));
@@ -55,6 +58,7 @@ public class LeadController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "CRM", action = ActionType.UPDATE, target = "线索")
     public ApiResult<LeadVO> update(@RequestBody LeadRequest request) {
         try {
             return ApiResult.ok(leadService.update(request));
@@ -64,6 +68,7 @@ public class LeadController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "CRM", action = ActionType.DELETE, target = "线索")
     public ApiResult<Void> delete(@RequestBody LeadDeleteRequest request) {
         try {
             leadService.delete(request);
@@ -74,6 +79,7 @@ public class LeadController {
     }
 
     @PostMapping("/convert")
+    @Audit(module = "CRM", action = ActionType.UPDATE, target = "线索转客户")
     public ApiResult<Long> convert(@RequestBody LeadConvertRequest request) {
         try {
             return ApiResult.ok(leadService.convert(request));

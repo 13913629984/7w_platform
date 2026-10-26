@@ -135,6 +135,11 @@ public class RoleDataInitializer {
         insertRole("CRM_SALES", "销售人员", "system", "客户跟进、商机维护和合同查看", 1);
         insertRole("FIN_MANAGER", "财务经理", "system", "财务报表、应收应付、付款和预算审批", 1);
         insertRole("FIN_OPERATOR", "财务专员", "system", "费用、收付款和财务单据处理", 1);
+        insertRole("MAINT_ENGINEER", "维保工程师", "system", "设备台账、工单、保养计划的执行权限", 1);
+        insertRole("ETS_OPERATOR", "电测员", "system", "来货登记、测试执行与报告生成", 1);
+        // 兜底角色：历史数据里角色名是中文、或新用户还没分配角色时使用，只给最基础的只读权限。
+        // 绝不能缺这个角色——否则所有非管理员用户会拿到空权限、前端全线 401。
+        insertRole("STAFF", "普通员工", "system", "基础只读权限，新用户默认角色", 1);
         insertRole("CUSTOM_ROLE_1", "数据分析师", "custom", "跨模块数据查询与报表分析", 1);
         insertRole("CUSTOM_ROLE_2", "审计员", "custom", "查看操作审计和关键业务日志", 1);
         insertRole("CUSTOM_ROLE_3", "访客", "custom", "只读访问基础页面", 0);
@@ -150,20 +155,30 @@ public class RoleDataInitializer {
         assignPermissions("CRM_SALES", "CRM_VIEW", "CRM_EDIT", "CRM_DEAL", "CRM_CONTRACT");
         assignPermissions("FIN_MANAGER", "FIN", "FIN_VIEW", "FIN_RECEIVABLE", "FIN_PAYABLE", "FIN_EXPENSE", "FIN_PAYMENT", "FIN_BUDGET", "FIN_ADMIN");
         assignPermissions("FIN_OPERATOR", "FIN_VIEW", "FIN_RECEIVABLE", "FIN_PAYABLE", "FIN_EXPENSE", "FIN_PAYMENT");
+        assignPermissions("MAINT_ENGINEER", "MAINT", "MAINT_VIEW", "MAINT_WORKORDER", "MAINT_PLAN", "MAINT_SPAREPART");
+        assignPermissions("ETS_OPERATOR", "ETS", "ETS_REGISTER", "ETS_TEST", "ETS_REPORT");
+        // 兜底角色只给各子系统只读，不给任何写权限（写接口会被写权限判定拦住）
+        assignPermissions("STAFF", "CRM_VIEW", "WMS_VIEW", "MAINT_VIEW", "FIN_VIEW", "ETS_REGISTER");
         assignPermissions("CUSTOM_ROLE_1", "WMS_VIEW", "CRM_VIEW", "FIN_VIEW", "SYS_AUDIT");
         assignPermissions("CUSTOM_ROLE_2", "SYS_AUDIT", "FIN_VIEW");
         assignPermissions("CUSTOM_ROLE_3", "CRM_VIEW", "WMS_VIEW");
     }
 
     private void initUserRoles() {
-        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sys_user_role", Integer.class);
-        if (count != null && count > 0) {
-            return;
-        }
+        // 幂等：不管表里原来有多少行，都把 "还没分配角色" 的启用用户补上兜底角色。
+        // 同时也把历史中文角色名（sys_user.role='普通用户'）的用户接上 STAFF，
+        // 否则他们登录后拿不到任何权限，前端会全线 401 被踢回登录页。
         jdbcTemplate.update("INSERT IGNORE INTO sys_user_role (user_id, role_code) SELECT id, 'SUPER_ADMIN' FROM sys_user WHERE username = 'admin'");
         jdbcTemplate.update("INSERT IGNORE INTO sys_user_role (user_id, role_code) SELECT id, 'CRM_SALES' FROM sys_user WHERE role = '销售人员'");
         jdbcTemplate.update("INSERT IGNORE INTO sys_user_role (user_id, role_code) SELECT id, 'WMS_OPERATOR' FROM sys_user WHERE role = 'WMS操作员'");
         jdbcTemplate.update("INSERT IGNORE INTO sys_user_role (user_id, role_code) SELECT id, 'FIN_OPERATOR' FROM sys_user WHERE role = '财务专员'");
+        // 兜底：所有启用但还挂着中文/非法角色名的用户，统一接 STAFF（只读）
+        jdbcTemplate.update("""
+                INSERT IGNORE INTO sys_user_role (user_id, role_code)
+                SELECT u.id, 'STAFF' FROM sys_user u
+                WHERE u.id NOT IN (SELECT user_id FROM sys_user_role)
+                  AND u.status = 1
+                """);
     }
 
     private void insertPermission(String code, String name, String parentCode, String module, String description, int sort) {

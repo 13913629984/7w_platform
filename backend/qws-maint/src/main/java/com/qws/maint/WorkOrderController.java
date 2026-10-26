@@ -1,6 +1,8 @@
 package com.qws.maint;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.maint.MaintListResult;
 import com.qws.common.dto.maint.WorkOrderDeleteRequest;
@@ -65,6 +67,7 @@ public class WorkOrderController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "MAINT", action = ActionType.CREATE, target = "维保工单")
     public ApiResult<WorkOrderVO> create(@RequestBody WorkOrderRequest request) {
         try {
             return ApiResult.ok(workOrderService.create(request));
@@ -74,6 +77,7 @@ public class WorkOrderController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "MAINT", action = ActionType.UPDATE, target = "维保工单")
     public ApiResult<WorkOrderVO> update(@RequestBody WorkOrderRequest request) {
         try {
             return ApiResult.ok(workOrderService.update(request));
@@ -83,6 +87,7 @@ public class WorkOrderController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "MAINT", action = ActionType.DELETE, target = "维保工单")
     public ApiResult<Void> delete(@RequestBody WorkOrderDeleteRequest request) {
         try {
             workOrderService.delete(request == null ? null : request.getId());

@@ -1,6 +1,8 @@
 package com.qws.fin;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,12 +39,14 @@ public class ExpenseController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "FIN", action = ActionType.CREATE, target = "费用")
     public ApiResult<Map<String, Object>> create(@RequestBody Map<String, Object> request) {
         try { return ApiResult.ok(expenseService.create(request)); }
         catch (IllegalArgumentException | IllegalStateException ex) { return ApiResult.fail(ex.getMessage()); }
     }
 
     @PostMapping("/approve")
+    @Audit(module = "FIN", action = ActionType.APPROVE, target = "费用审批")
     public ApiResult<Map<String, Object>> approve(@RequestBody Map<String, Object> request) {
         try { return ApiResult.ok(expenseService.approve(request)); }
         catch (IllegalArgumentException | IllegalStateException ex) { return ApiResult.fail(ex.getMessage()); }

@@ -1,6 +1,8 @@
 package com.qws.crm;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.order.OrderBatchDeleteRequest;
 import com.qws.common.dto.order.OrderDeleteRequest;
@@ -64,6 +66,7 @@ public class OrderController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "CRM", action = ActionType.CREATE, target = "销售订单")
     public ApiResult<OrderVO> create(@RequestBody OrderRequest request) {
         try {
             return ApiResult.ok(orderService.create(request));
@@ -73,6 +76,7 @@ public class OrderController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "CRM", action = ActionType.UPDATE, target = "销售订单")
     public ApiResult<OrderVO> update(@RequestBody OrderRequest request) {
         try {
             return ApiResult.ok(orderService.update(request));
@@ -82,6 +86,7 @@ public class OrderController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "CRM", action = ActionType.DELETE, target = "销售订单")
     public ApiResult<Void> delete(@RequestBody OrderDeleteRequest request) {
         try {
             orderService.delete(request);
@@ -92,11 +97,13 @@ public class OrderController {
     }
 
     @PostMapping("/batch-delete")
+    @Audit(module = "CRM", action = ActionType.DELETE, target = "销售订单")
     public ApiResult<Integer> batchDelete(@RequestBody OrderBatchDeleteRequest request) {
         return ApiResult.ok(orderService.batchDelete(request));
     }
 
     @PostMapping("/confirm/{id}")
+    @Audit(module = "CRM", action = ActionType.STATUS, target = "销售订单确认")
     public ApiResult<OrderVO> confirm(@PathVariable Long id) {
         try {
             return ApiResult.ok(orderService.confirm(id));
@@ -106,6 +113,7 @@ public class OrderController {
     }
 
     @PostMapping("/deliver/{id}")
+    @Audit(module = "CRM", action = ActionType.EXECUTE, target = "销售订单发货")
     public ApiResult<OrderVO> deliver(@PathVariable Long id) {
         try {
             return ApiResult.ok(orderService.deliver(id));

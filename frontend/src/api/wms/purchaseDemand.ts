@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { unwrapList } from '@/api/list'
 
 export type DemandSource = 'warning' | 'mrp' | 'manual'
 export type DemandStatus = 'pending' | 'ordered' | 'completed'
@@ -69,7 +70,7 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<Ap
 }
 
 export function listDemands(params: DemandQuery = {}) {
-  return unwrap<PurchaseDemand[]>(request.get('/wms/purchase-demand/list', { params }))
+  return unwrapList<PurchaseDemand>(request.get('/wms/purchase-demand/list', { params }))
 }
 
 export function getDemandStats() {

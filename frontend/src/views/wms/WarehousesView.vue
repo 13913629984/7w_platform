@@ -186,11 +186,8 @@ async function loadData() {
       listWarehouses({ keyword: keyword.value.trim() || undefined, type: typeFilter.value || undefined, status: statusFilter.value }),
       getWarehouseStats(),
     ])
-    if (listRes.code !== 0) {
-      ElMessage.error(listRes.message || '加载仓库失败')
-      return
-    }
-    rows.value = listRes.data || []
+    // 列表接口已由 unwrapList 统一解包成数组（失败抛异常走 catch）
+    rows.value = listRes || []
     const maxPage = Math.max(1, Math.ceil(rows.value.length / pageSize.value))
     if (page.value > maxPage) page.value = maxPage
     if (statsRes.code === 0) stats.value = statsRes.data

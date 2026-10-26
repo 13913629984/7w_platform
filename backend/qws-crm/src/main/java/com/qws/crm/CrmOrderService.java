@@ -12,6 +12,8 @@ import com.qws.common.entity.CrmCustomer;
 import com.qws.common.entity.CrmDeal;
 import com.qws.common.entity.CrmOrder;
 import com.qws.common.entity.CrmOrderItem;
+import com.qws.common.entity.Inventory;
+import com.qws.common.entity.Location;
 import com.qws.common.entity.Material;
 import com.qws.common.entity.OutboundItem;
 import com.qws.common.entity.OutboundOrder;
@@ -20,6 +22,8 @@ import com.qws.common.mapper.CrmCustomerMapper;
 import com.qws.common.mapper.CrmDealMapper;
 import com.qws.common.mapper.CrmOrderItemMapper;
 import com.qws.common.mapper.CrmOrderMapper;
+import com.qws.common.mapper.InventoryMapper;
+import com.qws.common.mapper.LocationMapper;
 import com.qws.common.mapper.MaterialMapper;
 import com.qws.common.mapper.OutboundItemMapper;
 import com.qws.common.mapper.OutboundOrderMapper;
@@ -36,6 +40,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -53,6 +58,8 @@ public class CrmOrderService {
     private final OutboundItemMapper outboundItemMapper;
     private final MaterialMapper materialMapper;
     private final WarehouseMapper warehouseMapper;
+    private final InventoryMapper inventoryMapper;
+    private final LocationMapper locationMapper;
 
     public CrmOrderService(CrmOrderMapper orderMapper,
                            CrmOrderItemMapper itemMapper,
@@ -61,7 +68,9 @@ public class CrmOrderService {
                            OutboundOrderMapper outboundOrderMapper,
                            OutboundItemMapper outboundItemMapper,
                            MaterialMapper materialMapper,
-                           WarehouseMapper warehouseMapper) {
+                           WarehouseMapper warehouseMapper,
+                           InventoryMapper inventoryMapper,
+                           LocationMapper locationMapper) {
         this.orderMapper = orderMapper;
         this.itemMapper = itemMapper;
         this.customerMapper = customerMapper;
@@ -70,6 +79,8 @@ public class CrmOrderService {
         this.outboundItemMapper = outboundItemMapper;
         this.materialMapper = materialMapper;
         this.warehouseMapper = warehouseMapper;
+        this.inventoryMapper = inventoryMapper;
+        this.locationMapper = locationMapper;
     }
 
     public OrderListResult list(String keyword, String status, Long customerId, int page, int pageSize) {
@@ -219,22 +230,39 @@ public class CrmOrderService {
         List<CrmOrderItem> orderItems = itemMapper.selectList(new LambdaQueryWrapper<CrmOrderItem>()
                 .eq(CrmOrderItem::getOrderId, order.getId())
                 .orderByAsc(CrmOrderItem::getId));
+        if (orderItems.isEmpty()) {
+            throw new IllegalStateException("订单没有产品明细，无法生成出库单");
+        }
 
+        // 1. 订单产品 -> WMS 物料（匹配不到直接报错，不再拿首个物料兜底）
+        List<ResolvedOrderLine> lines = new ArrayList<>();
+        for (CrmOrderItem item : orderItems) {
+            Material material = resolveMaterial(item);
+            BigDecimal qty = item.getQuantity() == null ? BigDecimal.ZERO : BigDecimal.valueOf(item.getQuantity());
+            if (qty.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalStateException("订单产品「" + item.getProductName() + "」数量必须大于 0");
+            }
+            lines.add(new ResolvedOrderLine(item, material, qty,
+                    item.getPrice() == null ? BigDecimal.ZERO : item.getPrice()));
+        }
+
+        // 2. 选一个能整体满足订单的仓库（出库单头只有一个仓库字段，不能跨仓拆单）
+        AllocationPlan plan = planAllocation(lines);
+
+        // 3. 落库：单头 + 按「物料+库位+批次」拆分的明细（明细自带库位，执行出库才能直接扣库存）
         String outboundCode = nextOutboundCode();
         OutboundOrder outbound = new OutboundOrder();
         outbound.setCode(outboundCode);
         outbound.setOrderNo(order.getOrderNo());
         outbound.setCustomer(order.getCustomerName());
-        outbound.setWarehouseCode(defaultWarehouseCode());
-        outbound.setMaterialCount(orderItems.size());
+        outbound.setWarehouseCode(plan.warehouseCode());
+        outbound.setMaterialCount(plan.lines().size());
 
         BigDecimal totalQty = BigDecimal.ZERO;
         BigDecimal totalAmount = BigDecimal.ZERO;
-        for (CrmOrderItem item : orderItems) {
-            BigDecimal qty = item.getQuantity() == null ? BigDecimal.ZERO : BigDecimal.valueOf(item.getQuantity());
-            BigDecimal price = item.getPrice() == null ? BigDecimal.ZERO : item.getPrice();
-            totalQty = totalQty.add(qty);
-            totalAmount = totalAmount.add(qty.multiply(price));
+        for (AllocationLine line : plan.lines()) {
+            totalQty = totalQty.add(line.qty());
+            totalAmount = totalAmount.add(line.qty().multiply(line.unitPrice()));
         }
         outbound.setTotalQty(totalQty);
         outbound.setOutboundQty(BigDecimal.ZERO);
@@ -246,22 +274,132 @@ public class CrmOrderService {
         outbound.setUpdateTime(now);
         outboundOrderMapper.insert(outbound);
 
-        for (CrmOrderItem item : orderItems) {
+        for (AllocationLine line : plan.lines()) {
             OutboundItem outItem = new OutboundItem();
             outItem.setOrderId(outbound.getId());
-            outItem.setMaterialId(resolveMaterialId(item));
-            outItem.setLocationCode("");
-            outItem.setBatchNo("");
+            outItem.setMaterialId(line.materialId());
+            outItem.setLocationCode(line.locationCode());
+            outItem.setBatchNo(line.batchNo());
             outItem.setMethod("qty");
-            outItem.setQuantity(item.getQuantity() == null ? BigDecimal.ZERO : BigDecimal.valueOf(item.getQuantity()));
+            outItem.setQuantity(line.qty());
             outItem.setOutboundQty(BigDecimal.ZERO);
-            outItem.setUnitPrice(item.getPrice() == null ? BigDecimal.ZERO : item.getPrice());
-            outItem.setRemark(item.getProductName());
+            outItem.setUnitPrice(line.unitPrice());
+            outItem.setRemark(line.productName());
             outItem.setCreateTime(now);
             outItem.setUpdateTime(now);
             outboundItemMapper.insert(outItem);
         }
         return outboundCode;
+    }
+
+    /**
+     * 为订单计算可执行的出库分配方案。
+     *
+     * <p>出库单头只有一个 warehouseCode，因此必须挑一个「所有明细都能被满足」的仓库；
+     * 找不到就抛出带数量明细的业务异常，避免生成一张注定执行失败的出库单。
+     */
+    private AllocationPlan planAllocation(List<ResolvedOrderLine> lines) {
+        Map<Long, BigDecimal> need = new HashMap<>();
+        for (ResolvedOrderLine line : lines) {
+            need.merge(line.material().getId(), line.qty(), BigDecimal::add);
+        }
+        List<Inventory> rawStock = inventoryMapper.selectList(new LambdaQueryWrapper<Inventory>()
+                .in(Inventory::getMaterialId, new ArrayList<>(need.keySet()))
+                .eq(Inventory::getStatus, 1)
+                .gt(Inventory::getAvailableQty, BigDecimal.ZERO)
+                .orderByAsc(Inventory::getId));
+        // 过滤掉库位不存在的脏库存行（历史数据里落过 location_code='DEFAULT' 这种幽灵行）
+        Map<String, Location> locationMap = locationMapper.selectList(null).stream()
+                .collect(Collectors.toMap(Location::getCode, Function.identity(), (a, b) -> a));
+        List<Inventory> stock = rawStock.stream()
+                .filter(inv -> {
+                    Location location = locationMap.get(inv.getLocationCode());
+                    return location != null && inv.getWarehouseCode().equals(location.getWarehouseCode());
+                })
+                .collect(Collectors.toList());
+        if (stock.isEmpty()) {
+            throw new IllegalStateException("订单产品在 WMS 没有可用库存，请先采购入库或改为手工创建出库单");
+        }
+
+        // 候选仓库：优先成品仓
+        Map<String, Warehouse> warehouseMap = warehouseMapper.selectList(null).stream()
+                .collect(Collectors.toMap(Warehouse::getCode, Function.identity(), (a, b) -> a));
+        List<String> candidates = stock.stream().map(Inventory::getWarehouseCode).distinct().collect(Collectors.toList());
+        candidates.sort((a, b) -> {
+            int rankA = isFinished(warehouseMap.get(a)) ? 0 : 1;
+            int rankB = isFinished(warehouseMap.get(b)) ? 0 : 1;
+            return rankA != rankB ? Integer.compare(rankA, rankB) : a.compareTo(b);
+        });
+
+        String best = null;
+        String shortageDetail = null;
+        for (String warehouseCode : candidates) {
+            Map<Long, BigDecimal> free = new HashMap<>();
+            for (Inventory inv : stock) {
+                if (!warehouseCode.equals(inv.getWarehouseCode())) continue;
+                free.merge(inv.getMaterialId(), nz(inv.getAvailableQty()), BigDecimal::add);
+            }
+            List<String> shortages = new ArrayList<>();
+            for (ResolvedOrderLine line : lines) {
+                BigDecimal available = free.getOrDefault(line.material().getId(), BigDecimal.ZERO);
+                if (available.compareTo(line.qty()) < 0) {
+                    shortages.add(line.material().getName() + " 需要 " + plain(line.qty()) + "，可用 " + plain(available));
+                }
+            }
+            if (shortages.isEmpty()) {
+                best = warehouseCode;
+                break;
+            }
+            if (shortageDetail == null) {
+                shortageDetail = "仓库 " + warehouseCode + "：" + String.join("；", shortages);
+            }
+        }
+        if (best == null) {
+            throw new IllegalStateException("库存不足，无法生成出库单（" + shortageDetail + "）");
+        }
+
+        // 按先进先出把每个物料的需求量摊到该仓库的库存行上
+        Map<Long, BigDecimal> remaining = new HashMap<>(need);
+        List<AllocationLine> result = new ArrayList<>();
+        for (Inventory inv : stock) {
+            if (!best.equals(inv.getWarehouseCode())) continue;
+            BigDecimal left = remaining.getOrDefault(inv.getMaterialId(), BigDecimal.ZERO);
+            if (left.compareTo(BigDecimal.ZERO) <= 0) continue;
+            BigDecimal take = nz(inv.getAvailableQty()).min(left);
+            if (take.compareTo(BigDecimal.ZERO) <= 0) continue;
+            ResolvedOrderLine line = lines.stream()
+                    .filter(l -> l.material().getId().equals(inv.getMaterialId()))
+                    .findFirst().orElseThrow();
+            result.add(new AllocationLine(inv.getMaterialId(), inv.getLocationCode(),
+                    inv.getBatchNo() == null ? "" : inv.getBatchNo(), take, line.unitPrice(), line.item().getProductName()));
+            remaining.put(inv.getMaterialId(), left.subtract(take));
+        }
+        return new AllocationPlan(best, result);
+    }
+
+    private static boolean isFinished(Warehouse warehouse) {
+        return warehouse != null && "finished".equals(warehouse.getType());
+    }
+
+    private static BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private static String plain(BigDecimal value) {
+        return nz(value).stripTrailingZeros().toPlainString();
+    }
+
+    /** 订单行 + 解析后的物料 */
+    private record ResolvedOrderLine(CrmOrderItem item, Material material, BigDecimal qty, BigDecimal unitPrice) {
+    }
+
+    /** 单条出库明细（物料 + 库位 + 批次 + 数量） */
+    private record AllocationLine(Long materialId, String locationCode, String batchNo,
+                                  BigDecimal qty, BigDecimal unitPrice, String productName) {
+    }
+
+    /** 出库分配方案：单头仓库 + 明细列表 */
+    private record AllocationPlan(String warehouseCode, List<AllocationLine> lines) {
     }
 
     /** 生成下一个出库单号：OUT + yyyyMM + 3位流水（与 WMS 既有格式一致） */
@@ -273,7 +411,7 @@ public class CrmOrderService {
         return prefix + String.format("%03d", seq);
     }
 
-    /** 默认出库仓库：优先成品仓，否则取首个启用仓库 */
+    /** 默认出库仓库：优先成品仓，否则取首个启用仓库（仅在无库存参考时使用） */
     private String defaultWarehouseCode() {
         List<Warehouse> warehouses = warehouseMapper.selectList(new LambdaQueryWrapper<Warehouse>()
                 .eq(Warehouse::getStatus, 1));
@@ -287,25 +425,24 @@ public class CrmOrderService {
                 .orElse(warehouses.get(0).getCode());
     }
 
-    /** 按产品编码/名称匹配 WMS 物料，匹配不到则取首个物料兜底（占位，便于后续在 WMS 中调整） */
-    private Long resolveMaterialId(CrmOrderItem item) {
+    /** 按产品编码/名称匹配 WMS 物料，匹配不到直接报错（不再拿首个物料兜底） */
+    private Material resolveMaterial(CrmOrderItem item) {
         if (StringUtils.hasText(item.getProductCode())) {
             Material material = materialMapper.selectOne(new LambdaQueryWrapper<Material>()
                     .eq(Material::getSku, item.getProductCode().trim()).last("LIMIT 1"));
             if (material != null) {
-                return material.getId();
+                return material;
             }
         }
         if (StringUtils.hasText(item.getProductName())) {
             Material material = materialMapper.selectOne(new LambdaQueryWrapper<Material>()
                     .eq(Material::getName, item.getProductName().trim()).last("LIMIT 1"));
             if (material != null) {
-                return material.getId();
+                return material;
             }
         }
-        Material fallback = materialMapper.selectOne(new LambdaQueryWrapper<Material>()
-                .orderByAsc(Material::getId).last("LIMIT 1"));
-        return fallback == null ? 0L : fallback.getId();
+        throw new IllegalStateException("订单产品「" + item.getProductName() + "（" + item.getProductCode()
+                + "）」未匹配到 WMS 物料，请先在物料管理中维护该产品编码");
     }
 
     private void validate(OrderRequest request) {

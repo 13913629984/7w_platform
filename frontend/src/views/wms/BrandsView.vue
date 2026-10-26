@@ -174,12 +174,9 @@ async function loadData() {
       listBrands({ keyword: keyword.value.trim() || undefined, status: statusFilter.value }),
       getBrandStats(),
     ])
-    if (listRes.code !== 0) {
-      ElMessage.error(listRes.message || '加载品牌失败')
-      return
-    }
     if (statsRes.code === 0) stats.value = statsRes.data
-    rows.value = listRes.data || []
+    // listBrands 已由 unwrapList 解包成数组（失败抛异常）
+    rows.value = listRes || []
     total.value = rows.value.length
     const maxPage = Math.max(1, Math.ceil(total.value / pageSize.value))
     if (page.value > maxPage) page.value = maxPage

@@ -1,6 +1,8 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.location.LocationDeleteRequest;
 import com.qws.common.dto.location.LocationRequest;
@@ -48,18 +50,21 @@ public class LocationController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "WMS", action = ActionType.CREATE, target = "库位")
     public ApiResult<LocationVO> create(@RequestBody LocationRequest request) {
         try { return ApiResult.ok(locationService.create(request)); }
         catch (IllegalArgumentException | IllegalStateException ex) { return ApiResult.fail(ex.getMessage()); }
     }
 
     @PostMapping("/update")
+    @Audit(module = "WMS", action = ActionType.UPDATE, target = "库位")
     public ApiResult<LocationVO> update(@RequestBody LocationRequest request) {
         try { return ApiResult.ok(locationService.update(request)); }
         catch (IllegalArgumentException | IllegalStateException ex) { return ApiResult.fail(ex.getMessage()); }
     }
 
     @PostMapping("/delete")
+    @Audit(module = "WMS", action = ActionType.DELETE, target = "库位")
     public ApiResult<Void> delete(@RequestBody LocationDeleteRequest request) {
         try { locationService.delete(request.getId()); return ApiResult.ok(null); }
         catch (IllegalArgumentException | IllegalStateException ex) { return ApiResult.fail(ex.getMessage()); }

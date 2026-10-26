@@ -144,6 +144,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { downloadCsvFromRows } from '@/utils/export'
 import { getWorkspace } from '@/api/fin/workspace'
 
 const DONUT_COLORS = ['#409eff', '#67c23a', '#e6a23c', '#909399']
@@ -331,7 +332,20 @@ function apTagType(status: string) {
 }
 
 function handleExport() {
-  ElMessage.success('导出成功')
+  if (!recentRecords.value.length) {
+    ElMessage.warning('暂无可导出的流水数据')
+    return
+  }
+  downloadCsvFromRows('财务流水', [
+    { label: '流水号', value: (r) => r.code },
+    { label: '业务类型', value: (r) => r.bizType },
+    { label: '来源模块', value: (r) => r.module },
+    { label: '收支方向', value: (r) => r.direction },
+    { label: '金额', value: (r) => Number(r.amount || 0).toFixed(2) },
+    { label: '状态', value: (r) => r.status },
+    { label: '日期', value: (r) => r.date },
+  ], recentRecords.value)
+  ElMessage.success('已导出财务流水')
 }
 function handleRefresh() {
   ElMessage.success('已刷新')

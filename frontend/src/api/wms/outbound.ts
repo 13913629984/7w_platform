@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { unwrapList } from '@/api/list'
 
 export type OutboundMethod = 'qty' | 'sn'
 export type OutboundStatus = 'completed' | 'partial' | 'pending'
@@ -81,15 +82,15 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<Ap
 }
 
 export function listOutboundOrders(params: OutboundQuery = {}) {
-  return unwrap<OutboundOrder[]>(request.get('/wms/outbound/list', { params }))
+  return unwrapList<OutboundOrder>(request.get('/wms/outbound/list', { params }))
 }
 
 export function listOutboundDetails(params: OutboundDetailQuery = {}) {
-  return unwrap<OutboundRecord[]>(request.get('/wms/outbound/details', { params }))
+  return unwrapList<OutboundRecord>(request.get('/wms/outbound/details', { params }))
 }
 
 export function listOutboundSn(params: OutboundSnQuery = {}) {
-  return unwrap<OutboundSnRecord[]>(request.get('/wms/outbound/sn', { params }))
+  return unwrapList<OutboundSnRecord>(request.get('/wms/outbound/sn', { params }))
 }
 
 export function getOutboundOrder(id: number) {

@@ -79,7 +79,17 @@ export const useAuthStore = defineStore('auth', {
       }
 
       const { data } = await request.get('/auth/profile')
-      this.setProfile(data.data || data)
+      // 后端已改为未登录/凭证无效返回 401（axios 会 reject），但保留 code 判断兜底：
+      // 避免旧服务端返回 200 + code!=0 时，用空 profile 覆盖本地权限，
+      // 造成「明明登录了但菜单全没了」的诡异现象。
+      if (data && typeof data.code === 'number' && data.code !== 0) {
+        throw new Error(data.message || '获取用户信息失败')
+      }
+      const profile = (data && data.data) || data
+      if (!profile || (!profile.username && !profile.roles?.length)) {
+        throw new Error('获取用户信息失败')
+      }
+      this.setProfile(profile)
     },
     async login(form: LoginForm) {
       if (import.meta.env.VITE_USE_MOCK === 'true') {

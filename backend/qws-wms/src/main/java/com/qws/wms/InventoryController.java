@@ -1,6 +1,8 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.inventory.InventoryDeleteRequest;
 import com.qws.common.dto.inventory.InventoryRequest;
@@ -49,18 +51,21 @@ public class InventoryController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "WMS", action = ActionType.CREATE, target = "库存")
     public ApiResult<InventoryVO> create(@RequestBody InventoryRequest request) {
         try { return ApiResult.ok(inventoryService.create(request)); }
         catch (IllegalArgumentException | IllegalStateException ex) { return ApiResult.fail(ex.getMessage()); }
     }
 
     @PostMapping("/update")
+    @Audit(module = "WMS", action = ActionType.UPDATE, target = "库存")
     public ApiResult<InventoryVO> update(@RequestBody InventoryRequest request) {
         try { return ApiResult.ok(inventoryService.update(request)); }
         catch (IllegalArgumentException | IllegalStateException ex) { return ApiResult.fail(ex.getMessage()); }
     }
 
     @PostMapping("/delete")
+    @Audit(module = "WMS", action = ActionType.DELETE, target = "库存")
     public ApiResult<Void> delete(@RequestBody InventoryDeleteRequest request) {
         try { inventoryService.delete(request.getId()); return ApiResult.ok(null); }
         catch (IllegalArgumentException | IllegalStateException ex) { return ApiResult.fail(ex.getMessage()); }

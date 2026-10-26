@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { unwrapList } from '@/api/list'
 
 export interface WarehouseItem {
   id?: number
@@ -48,7 +49,7 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<Ap
 }
 
 export function listWarehouses(params: WarehouseQuery = {}) {
-  return unwrap<WarehouseItem[]>(request.get('/wms/warehouse/list', { params }))
+  return unwrapList<WarehouseItem>(request.get('/wms/warehouse/list', { params }))
 }
 
 export function getWarehouseStats() {

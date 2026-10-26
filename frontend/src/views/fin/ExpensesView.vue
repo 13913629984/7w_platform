@@ -65,8 +65,11 @@
             <el-tag :type="row.approved ? 'success' : 'primary'" effect="light">{{ row.approved ? '已审批' : '审批中' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="90" align="center" fixed="right">
-          <template #default><el-button link type="primary">查看</el-button></template>
+        <el-table-column label="操作" width="140" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-button v-if="!row.approved" link type="primary" @click="handleApprove(row)">审批</el-button>
+            <span v-else class="approved-text">已审批</span>
+          </template>
         </el-table-column>
       </el-table>
 
@@ -83,13 +86,45 @@
         />
       </div>
     </div>
+
+    <el-dialog v-model="createVisible" title="新增费用" width="560px" :close-on-click-modal="false">
+      <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="88px">
+        <el-form-item label="费用类型">
+          <el-select v-model="createForm.type" style="width: 100%">
+            <el-option v-for="t in expenseTypeOptions" :key="t" :label="t" :value="t" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="关联模块">
+          <el-select v-model="createForm.module" style="width: 100%">
+            <el-option v-for="m in moduleOptions" :key="m" :label="m" :value="m" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="费用项目" prop="item">
+          <el-input v-model="createForm.item" maxlength="120" placeholder="如：5 月差旅费" />
+        </el-form-item>
+        <el-form-item label="金额" prop="amount">
+          <el-input-number v-model="createForm.amount" :min="0" :step="100" :precision="2" controls-position="right" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="发生日期">
+          <el-date-picker v-model="createForm.date" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="申请人">
+          <el-input v-model="createForm.applicant" maxlength="50" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createVisible = false">取消</el-button>
+        <el-button type="primary" :loading="createSubmitting" @click="submitCreate">确定提交</el-button>
+      </template>
+    </el-dialog>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { listExpenses, expenseStats, type Expense } from '@/api/fin/expense'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { downloadCsvFromRows } from '@/utils/export'
+import { listExpenses, expenseStats, createExpense, approveExpense, type Expense } from '@/api/fin/expense'
 
 const startMonth = ref('')
 const endMonth = ref('')
@@ -157,11 +192,92 @@ function typeTagType(type: string) {
 }
 
 function handleExport() {
-  ElMessage.success('导出成功')
+  if (!expenses.value.length) {
+    ElMessage.warning('暂无可导出的费用数据')
+    return
+  }
+  downloadCsvFromRows('费用列表', [
+    { label: '费用编号', value: (r) => r.code },
+    { label: '费用类型', value: (r) => r.type },
+    { label: '关联模块', value: (r) => r.module },
+    { label: '费用项目', value: (r) => r.item },
+    { label: '金额', value: (r) => Number(r.amount || 0).toFixed(2) },
+    { label: '发生日期', value: (r) => r.date },
+    { label: '申请人', value: (r) => r.applicant },
+    { label: '审批状态', value: (r) => (r.approved ? '已审批' : '审批中') },
+  ], expenses.value)
+  ElMessage.success('已导出当前页数据')
+}
+
+/* ---------------- 新增费用 ---------------- */
+const createVisible = ref(false)
+const createFormRef = ref<FormInstance>()
+const createSubmitting = ref(false)
+const createForm = reactive({
+  type: '销售费用',
+  module: 'CRM',
+  item: '',
+  amount: 0,
+  date: '',
+  applicant: '',
+})
+const expenseTypeOptions = ['销售费用', '管理费用', '研发费用', '财务费用']
+const moduleOptions = ['CRM', 'WMS', 'MAINT', 'ETS', 'FIN', 'SYS']
+const createRules: FormRules = {
+  item: [{ required: true, message: '请填写费用项目', trigger: 'blur' }],
+  amount: [{ required: true, message: '请填写金额', trigger: 'blur' }],
 }
 
 function handleCreate() {
-  ElMessage.info('新增费用')
+  Object.assign(createForm, {
+    type: '销售费用',
+    module: 'CRM',
+    item: '',
+    amount: 0,
+    date: new Date().toISOString().slice(0, 10),
+    applicant: '',
+  })
+  createVisible.value = true
+}
+
+async function submitCreate() {
+  if (!createFormRef.value) return
+  const valid = await createFormRef.value.validate().catch(() => false)
+  if (!valid) return
+  if (!(Number(createForm.amount) > 0)) {
+    ElMessage.warning('金额必须大于 0')
+    return
+  }
+  createSubmitting.value = true
+  try {
+    await createExpense({
+      type: createForm.type,
+      module: createForm.module,
+      item: createForm.item.trim(),
+      amount: Number(createForm.amount),
+      date: createForm.date,
+      applicant: createForm.applicant.trim(),
+    })
+    ElMessage.success('费用已提交')
+    createVisible.value = false
+    await loadAll()
+  } catch (e: any) {
+    ElMessage.error(e.message || '提交失败')
+  } finally {
+    createSubmitting.value = false
+  }
+}
+
+/** 审批单笔费用 */
+async function handleApprove(row: Expense) {
+  if (!row.id) return
+  try {
+    await approveExpense(row.id)
+    ElMessage.success('审批通过')
+    await loadAll()
+  } catch (e: any) {
+    ElMessage.error(e.message || '审批失败')
+  }
 }
 </script>
 
@@ -170,4 +286,5 @@ function handleCreate() {
 .range-sep { margin: 0 8px; color: var(--text-secondary); }
 .module-tag { color: #e6a23c; font-size: 13px; }
 .pagination-bar { display: flex; justify-content: flex-end; margin-top: 16px; }
+.approved-text { font-size: 12px; color: var(--el-text-color-secondary); }
 </style>

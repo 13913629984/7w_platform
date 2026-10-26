@@ -1,6 +1,8 @@
 package com.qws.system;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.*;
 import org.springframework.dao.DuplicateKeyException;
@@ -29,6 +31,7 @@ public class UserController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "SYS", action = ActionType.CREATE, target = "用户")
     public ApiResult<Map<String, Object>> create(@RequestBody UserCreateRequest request) {
         try {
             return ApiResult.ok(userService.create(request));
@@ -38,6 +41,7 @@ public class UserController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "SYS", action = ActionType.UPDATE, target = "用户")
     public ApiResult<Void> update(@RequestBody UserUpdateRequest request) {
         try {
             userService.update(request);
@@ -48,6 +52,7 @@ public class UserController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "SYS", action = ActionType.DELETE, target = "用户")
     public ApiResult<Void> delete(@RequestBody UserDeleteRequest request) {
         userService.delete(request.getId());
         return ApiResult.ok(null);

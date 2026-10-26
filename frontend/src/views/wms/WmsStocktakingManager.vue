@@ -277,8 +277,12 @@ function apiOk<T>(response: { code: number; message: string; data: T }) {
 }
 
 async function loadOrders() {
-  const response = await listStockTakingOrders({ keyword: searchText.value, status: statusFilter.value })
-  if (apiOk(response)) inventories.value = response.data
+  // listStockTakingOrders 已由 unwrapList 解包成数组（失败抛异常）
+  try {
+    inventories.value = await listStockTakingOrders({ keyword: searchText.value, status: statusFilter.value })
+  } catch (error: any) {
+    ElMessage.error(error?.message || '加载盘点单失败')
+  }
 }
 
 async function loadStats() {
@@ -287,9 +291,13 @@ async function loadStats() {
 }
 
 async function loadOptions() {
-  const [warehouseResponse, locationResponse] = await Promise.all([listWarehouses({ status: 1 }), listLocations({ status: 1 })])
-  if (apiOk(warehouseResponse)) warehouses.value = warehouseResponse.data
-  if (apiOk(locationResponse)) locationOptions.value = locationResponse.data
+  try {
+    const [warehouseList, locationList] = await Promise.all([listWarehouses({ status: 1 }), listLocations({ status: 1 })])
+    warehouses.value = warehouseList
+    locationOptions.value = locationList
+  } catch (error: any) {
+    ElMessage.error(error?.message || '加载仓库/库位失败')
+  }
 }
 
 async function refreshAll() {

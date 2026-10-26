@@ -192,8 +192,9 @@ async function loadOptions() {
     const suppliers = (matRes.data.rows || []).map((m: any) => m.supplier).filter(Boolean)
     supplierOptions.value = Array.from(new Set(suppliers))
   }
-  if (whRes.code === 0) warehouseOptions.value = whRes.data || []
-  if (demandRes.code === 0) demandOptions.value = (demandRes.data || []).map((d) => d.code)
+  // listWarehouses / listDemands 已由 unwrapList 解包成数组
+  warehouseOptions.value = whRes || []
+  demandOptions.value = (demandRes || []).map((d) => d.code)
 }
 
 async function loadData() {
@@ -204,11 +205,8 @@ async function loadData() {
       listPurchaseOrders({ keyword: searchText.value.trim() || undefined, status: statusFilter.value || undefined }),
       getPOStats(),
     ])
-    if (listRes.code !== 0) {
-      ElMessage.error(listRes.message || '加载采购订单失败')
-      return
-    }
-    poList.value = listRes.data || []
+    // listPurchaseOrders 已经把 ApiResult 解包成数组（unwrapList），失败会抛异常走 catch
+    poList.value = listRes || []
     const maxPage = Math.max(1, Math.ceil(poList.value.length / pageSize.value))
     if (page.value > maxPage) page.value = maxPage
     if (statsRes.code === 0) stats.value = statsRes.data

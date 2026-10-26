@@ -253,7 +253,7 @@ const cards = computed(() => {
     materialTotal: w ? num(w.materialTotal) : '—',
     customerTotal: c ? num(c.customerTotal) : '—',
     pendingOrders: m ? num(m.pendingOrderCount) : '—',
-    monthSales: c ? `¥${num(c.monthDealAmount)}万` : '—',
+    monthSales: c ? `¥${num(c.monthDealAmount)}` : '—',
     wmsFooter: w ? `今年新增 ${num(w.materialThisMonth)} 种` : '暂无数据',
     crmFooter: c ? `本月新增 ${num(c.monthAddedCustomers)}` : '暂无数据',
     maintFooter: m ? `逾期 ${num(m.overdueOrderCount)} 单` : '暂无数据',
@@ -492,16 +492,20 @@ async function loadData() {
   loading.value = true
   // 子系统可能未启动或当前用户无权限：用 allSettled 各自降级，
   // 不让单个接口失败拖垮整个首页
+  // 按权限裁剪请求：没有对应子系统权限就别发，避免首屏刷出一串 403。
+  // 无权限的卡片会保持「—」（见 cards 的 null 分支），不是显示 0。
+  const { hasPermission } = useAuthStore()
+  const skipped = <T>() => Promise.reject(new Error('no-permission')) as Promise<T>
   const [crm, wms, warn, stage, maint, ets, fin, sysUser, sysRole] = await Promise.allSettled([
-    getWorkspaceOverview(),
-    getWmsOverview(),
-    getWarningStats(),
-    request.get('/crm/deal/stage-counts'),
-    getMaintOverview(),
-    getEtsOverview(),
-    getFinWorkspace(),
-    request.get('/system/user/list', { params: { page: 1, pageSize: 1 } }),
-    request.get('/system/role/list', { params: { page: 1, pageSize: 1 } }),
+    hasPermission('CRM') ? getWorkspaceOverview() : skipped(),
+    hasPermission('WMS') ? getWmsOverview() : skipped(),
+    hasPermission('WMS') ? getWarningStats() : skipped(),
+    hasPermission('CRM') ? request.get('/crm/deal/stage-counts') : skipped(),
+    hasPermission('MAINT') ? getMaintOverview() : skipped(),
+    hasPermission('ETS') ? getEtsOverview() : skipped(),
+    hasPermission('FIN') ? getFinWorkspace() : skipped(),
+    hasPermission('SYS') ? request.get('/system/user/list', { params: { page: 1, pageSize: 1 } }) : skipped(),
+    hasPermission('SYS') ? request.get('/system/role/list', { params: { page: 1, pageSize: 1 } }) : skipped(),
   ])
 
   /**

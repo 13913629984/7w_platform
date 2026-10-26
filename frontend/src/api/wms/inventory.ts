@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { unwrapList } from '@/api/list'
 
 export interface InventoryItem {
   id?: number
@@ -60,7 +61,7 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<Ap
 }
 
 export function listInventories(params: InventoryQuery = {}) {
-  return unwrap<InventoryItem[]>(request.get('/wms/inventory/list', { params }))
+  return unwrapList<InventoryItem>(request.get('/wms/inventory/list', { params }))
 }
 
 export function getInventoryStats() {

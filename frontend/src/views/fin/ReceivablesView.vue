@@ -114,18 +114,48 @@
         />
       </div>
     </div>
+
+    <el-dialog v-model="createVisible" title="生成应收款" width="560px" :close-on-click-modal="false">
+      <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="96px">
+        <el-form-item label="客户名称" prop="customer">
+          <el-input v-model="createForm.customer" maxlength="160" placeholder="请输入客户名称" />
+        </el-form-item>
+        <el-form-item label="销售订单">
+          <el-input v-model="createForm.salesOrder" maxlength="80" placeholder="可填订单号，便于与 CRM 对账" />
+        </el-form-item>
+        <el-form-item label="合同号">
+          <el-input v-model="createForm.contract" maxlength="80" />
+        </el-form-item>
+        <el-form-item label="应收金额" prop="amount">
+          <el-input-number v-model="createForm.amount" :min="0" :step="1000" :precision="2" controls-position="right" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="到期日">
+          <el-date-picker v-model="createForm.dueDate" type="date" value-format="YYYY-MM-DD" placeholder="选择到期日" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="已开票">
+          <el-switch v-model="createForm.invoiced" />
+        </el-form-item>
+        <div class="form-tip">提示：销售订单发货完成后会由系统自动生成应收款，此处用于补录或手工建单。</div>
+      </el-form>
+      <template #footer>
+        <el-button @click="createVisible = false">取消</el-button>
+        <el-button type="primary" :loading="createSubmitting" @click="submitCreate">确定生成</el-button>
+      </template>
+    </el-dialog>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { downloadCsvFromRows } from '@/utils/export'
 import {
   listReceivables,
   listReceiptRecords,
   receivableStats,
   writeOffReceivable,
   invoiceReceivable,
+  createReceivable,
   type Receivable,
   type ReceiptRecord,
 } from '@/api/fin/receivable'
@@ -226,7 +256,39 @@ function statusTagType(status: string) {
 }
 
 function handleExport() {
-  ElMessage.success('导出成功')
+  if (activeTab.value === 'list') {
+    if (!receivables.value.length) {
+      ElMessage.warning('暂无可导出的应收款数据')
+      return
+    }
+    downloadCsvFromRows('应收款列表', [
+      { label: '单据号', value: (r) => r.code },
+      { label: '客户', value: (r) => r.customer },
+      { label: '销售订单', value: (r) => r.salesOrder },
+      { label: '合同号', value: (r) => r.contract || '' },
+      { label: '应收金额', value: (r) => Number(r.amount || 0).toFixed(2) },
+      { label: '已核销', value: (r) => Number(r.writtenOff || 0).toFixed(2) },
+      { label: '待核销', value: (r) => Number(r.pending || 0).toFixed(2) },
+      { label: '开票', value: (r) => (r.invoiced ? '已开票' : '未开票') },
+      { label: '到期日', value: (r) => r.dueDate },
+      { label: '状态', value: (r) => r.status },
+    ], receivables.value)
+  } else {
+    if (!records.value.length) {
+      ElMessage.warning('暂无可导出的回款记录')
+      return
+    }
+    downloadCsvFromRows('回款记录', [
+      { label: '回款单号', value: (r) => r.code },
+      { label: '客户', value: (r) => r.customer },
+      { label: '关联应收', value: (r) => r.receivableCode },
+      { label: '回款金额', value: (r) => Number(r.amount || 0).toFixed(2) },
+      { label: '回款方式', value: (r) => r.method },
+      { label: '回款日期', value: (r) => r.date },
+      { label: '操作人', value: (r) => r.operator },
+    ], records.value)
+  }
+  ElMessage.success('已导出当前页数据')
 }
 
 function handleRefresh() {
@@ -234,8 +296,47 @@ function handleRefresh() {
   ElMessage.success('已刷新')
 }
 
+/* ---------------- 生成应收款（手工建单） ---------------- */
+const createVisible = ref(false)
+const createFormRef = ref<FormInstance>()
+const createSubmitting = ref(false)
+const createForm = reactive({ customer: '', salesOrder: '', contract: '', amount: 0, dueDate: '', invoiced: false })
+const createRules: FormRules = {
+  customer: [{ required: true, message: '请填写客户名称', trigger: 'blur' }],
+  amount: [{ required: true, message: '请填写应收金额', trigger: 'blur' }],
+}
+
 function handleGenerate() {
-  ElMessage.info('请在客户订单中生成应收款')
+  Object.assign(createForm, { customer: '', salesOrder: '', contract: '', amount: 0, dueDate: '', invoiced: false })
+  createVisible.value = true
+}
+
+async function submitCreate() {
+  if (!createFormRef.value) return
+  const valid = await createFormRef.value.validate().catch(() => false)
+  if (!valid) return
+  if (!(Number(createForm.amount) > 0)) {
+    ElMessage.warning('应收金额必须大于 0')
+    return
+  }
+  createSubmitting.value = true
+  try {
+    await createReceivable({
+      customer: createForm.customer.trim(),
+      salesOrder: createForm.salesOrder.trim(),
+      contract: createForm.contract.trim(),
+      amount: Number(createForm.amount),
+      invoiced: createForm.invoiced,
+      dueDate: createForm.dueDate,
+    })
+    ElMessage.success('应收款已生成')
+    createVisible.value = false
+    await loadAll()
+  } catch (e: any) {
+    ElMessage.error(e.message || '生成失败')
+  } finally {
+    createSubmitting.value = false
+  }
 }
 
 async function handleWriteOff(row: Receivable) {
@@ -266,4 +367,5 @@ async function handleInvoice(row: Receivable) {
 <style scoped>
 .amount { color: #e6a23c; }
 .pagination-bar { display: flex; justify-content: flex-end; margin-top: 16px; }
+.form-tip { margin-left: 96px; font-size: 12px; color: var(--el-text-color-secondary); line-height: 1.6; }
 </style>

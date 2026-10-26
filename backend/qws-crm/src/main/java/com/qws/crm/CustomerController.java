@@ -1,6 +1,8 @@
 package com.qws.crm;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.customer.CustomerBatchDeleteRequest;
 import com.qws.common.dto.customer.CustomerDeleteRequest;
@@ -50,6 +52,7 @@ public class CustomerController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "CRM", action = ActionType.CREATE, target = "客户")
     public ApiResult<CustomerVO> create(@RequestBody CustomerRequest request) {
         try {
             return ApiResult.ok(customerService.create(request));
@@ -59,6 +62,7 @@ public class CustomerController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "CRM", action = ActionType.UPDATE, target = "客户")
     public ApiResult<CustomerVO> update(@RequestBody CustomerRequest request) {
         try {
             return ApiResult.ok(customerService.update(request));
@@ -68,6 +72,7 @@ public class CustomerController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "CRM", action = ActionType.DELETE, target = "客户")
     public ApiResult<Void> delete(@RequestBody CustomerDeleteRequest request) {
         try {
             customerService.delete(request);
@@ -78,11 +83,13 @@ public class CustomerController {
     }
 
     @PostMapping("/batch-delete")
+    @Audit(module = "CRM", action = ActionType.DELETE, target = "客户")
     public ApiResult<Integer> batchDelete(@RequestBody CustomerBatchDeleteRequest request) {
         return ApiResult.ok(customerService.batchDelete(request));
     }
 
     @PostMapping("/transfer")
+    @Audit(module = "CRM", action = ActionType.UPDATE, target = "客户归属")
     public ApiResult<Integer> transfer(@RequestBody CustomerTransferRequest request) {
         try {
             return ApiResult.ok(customerService.transfer(request));
@@ -92,6 +99,7 @@ public class CustomerController {
     }
 
     @PostMapping("/import")
+    @Audit(module = "CRM", action = ActionType.IMPORT, target = "客户")
     public ApiResult<CustomerImportResult> importBatch(@RequestBody CustomerImportRequest request) {
         return ApiResult.ok(customerService.importBatch(request));
     }

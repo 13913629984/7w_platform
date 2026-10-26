@@ -1,6 +1,9 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
+import com.qws.common.ListResult;
 import com.qws.common.security.RequirePermission;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,10 +28,10 @@ public class WarningController {
     }
 
     @GetMapping("/list")
-    public ApiResult<List<Map<String, Object>>> list(@RequestParam(required = false) String keyword,
+    public ApiResult<ListResult<Map<String, Object>>> list(@RequestParam(required = false) String keyword,
                                                      @RequestParam(required = false) String level,
                                                      @RequestParam(required = false) String status) {
-        return ApiResult.ok(warningService.list(keyword, level, status));
+        return ApiResult.ok(ListResult.of(warningService.list(keyword, level, status)));
     }
 
     @GetMapping("/stats")
@@ -43,17 +46,20 @@ public class WarningController {
     }
 
     @PostMapping("/scan")
+    @Audit(module = "WMS", action = ActionType.EXECUTE, target = "预警扫描")
     public ApiResult<Map<String, Object>> scan() {
         return ApiResult.ok(warningService.scan());
     }
 
     @PostMapping("/handle")
+    @Audit(module = "WMS", action = ActionType.UPDATE, target = "预警处理")
     public ApiResult<Map<String, Object>> handle(@RequestBody Map<String, Object> request) {
         try { return ApiResult.ok(warningService.handle(request)); }
         catch (IllegalArgumentException | IllegalStateException ex) { return ApiResult.fail(ex.getMessage()); }
     }
 
     @PostMapping("/delete")
+    @Audit(module = "WMS", action = ActionType.DELETE, target = "预警")
     public ApiResult<Void> delete(@RequestBody Map<String, Object> request) {
         Object id = request.get("id");
         if (!(id instanceof Number number)) return ApiResult.fail("缺少预警ID");

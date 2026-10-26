@@ -51,7 +51,7 @@
           <template #default="{ row }">{{ row.dealName || '-' }}</template>
         </el-table-column>
         <el-table-column label="订单金额" width="110" align="right">
-          <template #default="{ row }"><span class="amount">¥{{ formatAmount(row.amount) }}万</span></template>
+          <template #default="{ row }"><span class="amount">¥{{ formatAmount(row.amount) }}</span></template>
         </el-table-column>
         <el-table-column prop="contractNo" label="合同编号" min-width="140" />
         <el-table-column prop="signDate" label="签订日期" width="120" align="center">
@@ -114,7 +114,7 @@
         <el-form-item label="预计发货日期" prop="expectDeliverAt">
           <el-date-picker v-model="form.expectDeliverAt" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width:100%" />
         </el-form-item>
-        <el-form-item label="订单金额(万)" prop="amount">
+        <el-form-item label="订单金额(元)" prop="amount">
           <el-input-number v-model="form.amount" :min="0" :step="10" :precision="2" controls-position="right" :disabled="hasItems" style="width:100%" />
           <div v-if="hasItems" class="form-tip">已根据产品明细自动汇总</div>
         </el-form-item>
@@ -173,7 +173,7 @@
         <el-descriptions-item label="客户名称">{{ detail.customerName || '-' }}</el-descriptions-item>
         <el-descriptions-item label="商机名称">{{ detail.dealName || '-' }}</el-descriptions-item>
         <el-descriptions-item label="合同编号">{{ detail.contractNo || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="订单金额">¥{{ formatAmount(detail.amount) }}万</el-descriptions-item>
+        <el-descriptions-item label="订单金额">¥{{ formatAmount(detail.amount) }}</el-descriptions-item>
         <el-descriptions-item label="签订日期">{{ detail.signDate || '-' }}</el-descriptions-item>
         <el-descriptions-item label="预计发货">{{ detail.expectDeliverAt || '-' }}</el-descriptions-item>
         <el-descriptions-item label="负责人">{{ detail.owner || '-' }}</el-descriptions-item>
@@ -539,7 +539,7 @@ function handleExport() {
     ElMessage.warning('暂无可导出的订单数据')
     return
   }
-  const headers = ['订单编号', '客户名称', '商机名称', '订单金额(万)', '合同编号', '签订日期', '预计发货', '状态', '负责人']
+  const headers = ['订单编号', '客户名称', '商机名称', '订单金额(元)', '合同编号', '签订日期', '预计发货', '状态', '负责人']
   const lines = rows.value.map((r) =>
     [r.orderNo, r.customerName, r.dealName || '', r.amount, r.contractNo, r.signDate, r.expectDeliverAt || '', r.status || '待确认', r.owner || '']
       .map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`)

@@ -1,6 +1,8 @@
 package com.qws.maint;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.maint.MaintListResult;
 import com.qws.common.dto.maint.PlanDeleteRequest;
@@ -59,6 +61,7 @@ public class PlanController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "MAINT", action = ActionType.CREATE, target = "保养计划")
     public ApiResult<PlanVO> create(@RequestBody PlanRequest request) {
         try {
             return ApiResult.ok(planService.create(request));
@@ -68,6 +71,7 @@ public class PlanController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "MAINT", action = ActionType.UPDATE, target = "保养计划")
     public ApiResult<PlanVO> update(@RequestBody PlanRequest request) {
         try {
             return ApiResult.ok(planService.update(request));
@@ -77,6 +81,7 @@ public class PlanController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "MAINT", action = ActionType.DELETE, target = "保养计划")
     public ApiResult<Void> delete(@RequestBody PlanDeleteRequest request) {
         try {
             planService.delete(request == null ? null : request.getId());

@@ -15,5 +15,32 @@
       <groupId>com.baomidou</groupId>
       <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
     </dependency>
+    <!--
+      actuator 放在 common 里，所有微服务自动获得 /actuator/health。
+      之前服务没有健康端点，启动脚本只能用「端口是否监听」判就绪，
+      端口开了但 Spring 还没 ready 会误判，前端首屏就会拿到一批 502。
+    -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <!-- 审计切面（@Audit）需要 AOP 支持 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-aop</artifactId>
+    </dependency>
+    <!--
+      只用 BCrypt 算法，不引入整套 Spring Security 过滤链。
+      spring-security-crypto 是一个无传递依赖的纯工具包。
+    -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-crypto</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

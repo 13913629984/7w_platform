@@ -143,7 +143,7 @@
           </div>
           <el-table :data="item.locations" size="small" border>
             <el-table-column label="序号" type="index" width="70" align="center" />
-            <el-table-column label="库位" width="220"><template #default="{ row }"><el-select v-model="row.location" placeholder="选择库位" style="width:100%"><el-option v-for="loc in locations" :key="loc" :label="loc" :value="loc" /></el-select></template></el-table-column>
+            <el-table-column label="库位" width="220"><template #default="{ row }"><el-select v-model="row.location" placeholder="选择库位" style="width:100%"><el-option v-for="loc in executeLocations" :key="loc.code" :label="loc.code" :value="loc.code" /></el-select></template></el-table-column>
             <el-table-column label="出库数量" width="140" align="center"><template #default="{ row }"><el-input-number v-model="row.qty" :min="0" :max="item.remainingQty" size="small" /></template></el-table-column>
             <el-table-column label="SN码（SN出库时填写）"><template #default="{ row }"><el-input v-model="row.snList" :disabled="item.method !== 'sn'" placeholder="SN码，逗号分隔" /></template></el-table-column>
             <el-table-column label="操作" width="120" align="center"><template #default="{ $index, row }"><el-button v-if="item.method === 'sn'" link type="primary" @click="fillSn(item, row)">批量输入SN</el-button><el-button link type="danger" @click="removeLocation(item, $index)">删除</el-button></template></el-table-column>
@@ -225,7 +225,7 @@
 <script setup lang="ts">
 import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox, ElPagination } from 'element-plus'
-import { listLocations } from '@/api/wms/location'
+import { listLocations, type LocationItem } from '@/api/wms/location'
 import { listWarehouses, type WarehouseItem } from '@/api/wms/warehouse'
 import {
   createOutboundOrder,
@@ -290,7 +290,11 @@ const orders = ref<OutboundOrder[]>([])
 const outboundRecords = ref<OutboundRecord[]>([])
 const snRecords = ref<SnRecord[]>([])
 const warehouses = ref<WarehouseItem[]>([])
-const locations = ref<string[]>([])
+const locations = ref<LocationItem[]>([])
+/** 执行出库时只允许选出库单所在仓库的库位，避免跨仓库选错导致「库存不存在」 */
+const executeLocations = computed(() =>
+  locations.value.filter((loc) => loc.warehouseCode === executeOrder.value?.warehouseCode),
+)
 
 const methodText: Record<Method, string> = { qty: '数量出库', sn: 'SN出库' }
 const statusText: Record<OutboundStatus, string> = { completed: '已完成', partial: '部分出库', pending: '待出库' }
@@ -325,10 +329,38 @@ function normalizeItem(item: OutboundItem): OutboundItem { return { ...item, spe
 function normalizeRecord(record: OutboundRecord): OutboundRecord { return { ...record, spec: record.spec || '', location: record.location || '-', qty: Number(record.qty || 0), unitPrice: Number(record.unitPrice || 0), operator: record.operator || '-' } }
 function normalizeOrder(order: OutboundOrder): OutboundOrder { return { ...order, orderNo: order.orderNo || '-', warehouse: order.warehouse || order.warehouseCode, materialCount: Number(order.materialCount || 0), totalQty: Number(order.totalQty || 0), outboundQty: Number(order.outboundQty || 0), outboundRate: Number(order.outboundRate || 0), totalAmount: Number(order.totalAmount || 0), items: order.items?.map(normalizeItem), records: order.records?.map(normalizeRecord) } }
 
-async function loadOrders() { const response = await listOutboundOrders({ keyword: orderSearch.value, status: orderStatus.value }); if (apiOk(response)) orders.value = response.data.map(normalizeOrder) }
-async function loadDetails() { const response = await listOutboundDetails({ keyword: detailSearch.value, method: detailMethod.value }); if (apiOk(response)) outboundRecords.value = response.data.map(normalizeRecord) }
-async function loadSnRecords() { const response = await listOutboundSn({ keyword: snSearch.value, status: snStatus.value }); if (apiOk(response)) snRecords.value = response.data.map((item) => ({ ...item, outboundCode: item.outboundCode || '-', outboundTime: item.outboundTime || '-' })) }
-async function loadOptions() { const [warehouseResponse, locationResponse] = await Promise.all([listWarehouses({ status: 1 }), listLocations({ status: 1 })]); if (apiOk(warehouseResponse)) warehouses.value = warehouseResponse.data; if (apiOk(locationResponse)) locations.value = locationResponse.data.map((item) => item.code) }
+// 下面这些 list* 接口已由 unwrapList 统一解包成数组，失败会抛异常 -> 走各自 catch
+async function loadOrders() {
+  try {
+    orders.value = (await listOutboundOrders({ keyword: orderSearch.value, status: orderStatus.value })).map(normalizeOrder)
+  } catch (error: any) {
+    ElMessage.error(error?.message || '加载出库单失败')
+  }
+}
+async function loadDetails() {
+  try {
+    outboundRecords.value = (await listOutboundDetails({ keyword: detailSearch.value, method: detailMethod.value })).map(normalizeRecord)
+  } catch (error: any) {
+    ElMessage.error(error?.message || '加载出库明细失败')
+  }
+}
+async function loadSnRecords() {
+  try {
+    snRecords.value = (await listOutboundSn({ keyword: snSearch.value, status: snStatus.value }))
+      .map((item) => ({ ...item, outboundCode: item.outboundCode || '-', outboundTime: item.outboundTime || '-' }))
+  } catch (error: any) {
+    ElMessage.error(error?.message || '加载SN信息失败')
+  }
+}
+async function loadOptions() {
+  try {
+    const [warehouseList, locationList] = await Promise.all([listWarehouses({ status: 1 }), listLocations({ status: 1 })])
+    warehouses.value = warehouseList
+    locations.value = locationList
+  } catch (error: any) {
+    ElMessage.error(error?.message || '加载仓库/库位失败')
+  }
+}
 async function refreshAll() { await Promise.all([loadOrders(), loadDetails(), loadSnRecords(), loadOptions()]) }
 
 function exportOrders() {

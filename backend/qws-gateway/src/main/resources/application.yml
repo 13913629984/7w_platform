@@ -24,11 +24,10 @@ spring:
             - Path=/api/auth/**
           filters:
             - StripPrefix=1
+        # 系统管理。历史上这里还有一条无 StripPrefix 的 /system/** 路由，
+        # 导致同一份接口有两个入口、且 JwtAuthFilter 要写兼容分支去猜路径形态。
+        # 前端 baseURL 固定为 /api，已确认没有调用方走无前缀路径，故只保留一条。
         - id: qws-system
-          uri: lb://qws-system
-          predicates:
-            - Path=/system/**
-        - id: qws-system-api
           uri: lb://qws-system
           predicates:
             - Path=/api/system/**

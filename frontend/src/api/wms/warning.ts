@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { unwrapList } from '@/api/list'
 
 export type WarningLevel = 'high' | 'medium' | 'low'
 export type WarningStatus = 'pending' | 'handled' | 'resolved'
@@ -64,7 +65,7 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<Ap
 }
 
 export function listWarnings(params: WarningQuery = {}) {
-  return unwrap<WarningItem[]>(request.get('/wms/warning/list', { params }))
+  return unwrapList<WarningItem>(request.get('/wms/warning/list', { params }))
 }
 
 export function getWarningStats() {

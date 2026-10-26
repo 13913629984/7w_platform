@@ -101,20 +101,63 @@
           </template>
         </el-table-column>
         <el-table-column label="操作" width="90" align="center" fixed="right">
-          <template #default><el-button link type="primary">详情</el-button></template>
+          <template #default="{ row }"><el-button link type="primary" @click="showDetail(row)">详情</el-button></template>
         </el-table-column>
       </el-table>
     </div>
+
+    <el-dialog v-model="detailVisible" title="预算详情" width="520px">
+      <el-descriptions v-if="detailRow" :column="2" border>
+        <el-descriptions-item label="部门">{{ detailRow.dept }}</el-descriptions-item>
+        <el-descriptions-item label="预算项目">{{ detailRow.item }}</el-descriptions-item>
+        <el-descriptions-item label="年度预算">{{ formatWanRaw(detailRow.budget) }}</el-descriptions-item>
+        <el-descriptions-item label="已执行">{{ formatWanRaw(detailRow.executed) }}</el-descriptions-item>
+        <el-descriptions-item label="执行率">{{ detailRow.rate }}%</el-descriptions-item>
+        <el-descriptions-item label="剩余预算">{{ formatWanRaw(detailRow.budget - detailRow.executed) }}</el-descriptions-item>
+        <el-descriptions-item label="状态">{{ statusLabel(detailRow.rate) }}</el-descriptions-item>
+        <el-descriptions-item label="周期">{{ detailRow.year }} 年 {{ detailRow.month }} 月</el-descriptions-item>
+      </el-descriptions>
+    </el-dialog>
+
+    <el-dialog v-model="createVisible" title="新建预算" width="560px" :close-on-click-modal="false">
+      <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="96px">
+        <el-form-item label="部门" prop="dept">
+          <el-input v-model="createForm.dept" maxlength="60" placeholder="如：销售部" />
+        </el-form-item>
+        <el-form-item label="预算项目">
+          <el-input v-model="createForm.item" maxlength="120" placeholder="留空则自动生成「部门 + 预算」" />
+        </el-form-item>
+        <el-form-item label="预算金额" prop="budget">
+          <el-input-number v-model="createForm.budget" :min="0" :step="10" :precision="2" controls-position="right" style="width: 100%" />
+          <div class="form-tip">单位：万元（与页面展示保持一致）</div>
+        </el-form-item>
+        <el-form-item label="已执行">
+          <el-input-number v-model="createForm.executed" :min="0" :step="10" :precision="2" controls-position="right" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="年度">
+          <el-input-number v-model="createForm.year" :min="2000" :max="2100" :step="1" controls-position="right" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="月份">
+          <el-input-number v-model="createForm.month" :min="1" :max="12" :step="1" controls-position="right" style="width: 100%" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createVisible = false">取消</el-button>
+        <el-button type="primary" :loading="createSubmitting" @click="submitCreate">确定创建</el-button>
+      </template>
+    </el-dialog>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { downloadCsvFromRows } from '@/utils/export'
 import {
   listBudgets,
   budgetStats,
   budgetCharts,
+  createBudget,
   type Budget,
   type BudgetChartItem,
   type BudgetCompareItem,
@@ -239,6 +282,15 @@ function formatWan(value: number) {
   return `¥${value}万`
 }
 
+/* ---------------- 预算详情弹窗 ---------------- */
+const detailVisible = ref(false)
+const detailRow = ref<Budget | null>(null)
+
+function showDetail(row: Budget) {
+  detailRow.value = row
+  detailVisible.value = true
+}
+
 function rateColor(rate: number) {
   if (rate >= 90) return '#f56c6c'
   if (rate >= 70) return '#e6a23c'
@@ -258,11 +310,79 @@ function statusTagType(rate: number) {
 }
 
 function handleExport() {
-  ElMessage.success('导出成功')
+  if (!budgets.value.length) {
+    ElMessage.warning('暂无可导出的预算数据')
+    return
+  }
+  downloadCsvFromRows('预算明细', [
+    { label: '部门', value: (r) => r.dept },
+    { label: '预算项目', value: (r) => r.item },
+    { label: '年度预算(万)', value: (r) => Number(r.budget || 0).toFixed(2) },
+    { label: '已执行(万)', value: (r) => Number(r.executed || 0).toFixed(2) },
+    { label: '执行率(%)', value: (r) => Number(r.rate || 0).toFixed(2) },
+    { label: '剩余(万)', value: (r) => (Number(r.budget || 0) - Number(r.executed || 0)).toFixed(2) },
+    { label: '状态', value: (r) => statusLabel(Number(r.rate || 0)) },
+    { label: '年度', value: (r) => r.year ?? '' },
+    { label: '月份', value: (r) => r.month ?? '' },
+  ], budgets.value)
+  ElMessage.success('已导出当前预算数据')
+}
+
+/* ---------------- 新建预算 ---------------- */
+const createVisible = ref(false)
+const createFormRef = ref<FormInstance>()
+const createSubmitting = ref(false)
+const createForm = reactive({
+  dept: '',
+  item: '',
+  budget: 0,
+  executed: 0,
+  year: 2026,
+  month: new Date().getMonth() + 1,
+})
+const createRules: FormRules = {
+  dept: [{ required: true, message: '请填写部门', trigger: 'blur' }],
+  budget: [{ required: true, message: '请填写预算金额', trigger: 'blur' }],
 }
 
 function handleCreate() {
-  ElMessage.info('新建预算')
+  Object.assign(createForm, {
+    dept: '',
+    item: '',
+    budget: 0,
+    executed: 0,
+    year: 2026,
+    month: new Date().getMonth() + 1,
+  })
+  createVisible.value = true
+}
+
+async function submitCreate() {
+  if (!createFormRef.value) return
+  const valid = await createFormRef.value.validate().catch(() => false)
+  if (!valid) return
+  if (!(Number(createForm.budget) > 0)) {
+    ElMessage.warning('预算金额必须大于 0')
+    return
+  }
+  createSubmitting.value = true
+  try {
+    await createBudget({
+      dept: createForm.dept.trim(),
+      item: createForm.item.trim() || `${createForm.dept.trim()}预算`,
+      budget: Number(createForm.budget),
+      executed: Number(createForm.executed || 0),
+      year: Number(createForm.year),
+      month: Number(createForm.month),
+    })
+    ElMessage.success('预算已创建')
+    createVisible.value = false
+    await loadAll()
+  } catch (e: any) {
+    ElMessage.error(e.message || '创建失败')
+  } finally {
+    createSubmitting.value = false
+  }
 }
 </script>
 
@@ -279,4 +399,5 @@ function handleCreate() {
 .rate-cell { display: flex; align-items: center; gap: 10px; }
 .rate-cell :deep(.el-progress) { flex: 1; }
 .rate-text { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.form-tip { font-size: 12px; color: var(--el-text-color-secondary); line-height: 1.6; }
 </style>

@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { unwrapList } from '@/api/list'
 
 export interface SupplierItem {
   id?: number
@@ -48,7 +49,7 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<Ap
 }
 
 export function listSuppliers(params: SupplierQuery = {}) {
-  return unwrap<SupplierItem[]>(request.get('/wms/supplier/list', { params }))
+  return unwrapList<SupplierItem>(request.get('/wms/supplier/list', { params }))
 }
 
 export function getSupplierStats() {

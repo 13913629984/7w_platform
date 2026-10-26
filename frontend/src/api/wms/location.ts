@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { unwrapList } from '@/api/list'
 
 export interface LocationItem {
   id?: number
@@ -53,7 +54,7 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<Ap
 }
 
 export function listLocations(params: LocationQuery = {}) {
-  return unwrap<LocationItem[]>(request.get('/wms/location/list', { params }))
+  return unwrapList<LocationItem>(request.get('/wms/location/list', { params }))
 }
 
 export function getLocationStats() {

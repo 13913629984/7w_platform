@@ -1,6 +1,8 @@
 package com.qws.ets;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.ets.ReportApproveRequest;
 import com.qws.common.dto.ets.ReportDeleteRequest;
@@ -72,6 +74,7 @@ public class ReportController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "ETS", action = ActionType.CREATE, target = "测试报告")
     public ApiResult<ReportVO> create(@RequestBody ReportRequest request) {
         try {
             return ApiResult.ok(reportService.create(request));
@@ -81,6 +84,7 @@ public class ReportController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "ETS", action = ActionType.UPDATE, target = "测试报告")
     public ApiResult<ReportVO> update(@RequestBody ReportRequest request) {
         try {
             return ApiResult.ok(reportService.update(request));
@@ -90,6 +94,7 @@ public class ReportController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "ETS", action = ActionType.DELETE, target = "测试报告")
     public ApiResult<Void> delete(@RequestBody ReportDeleteRequest request) {
         try {
             reportService.delete(request);

@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { unwrapList } from '@/api/list'
 
 export interface MaterialTypeNode {
   id?: number
@@ -45,7 +46,7 @@ export function listMaterialTypeTree(keyword?: string) {
 }
 
 export function listMaterialTypes() {
-  return unwrap<MaterialTypeNode[]>(request.get('/wms/material-type/list'))
+  return unwrapList<MaterialTypeNode>(request.get('/wms/material-type/list'))
 }
 
 export function getMaterialType(id: number) {

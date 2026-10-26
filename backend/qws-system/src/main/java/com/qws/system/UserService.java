@@ -35,6 +35,9 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
 
+    /** 新用户默认角色：只读，避免「空权限 → 全线 401」 */
+    private static final String DEFAULT_ROLE_CODE = "STAFF";
+
     private final SysUserMapper sysUserMapper;
     private final SysEmployeeMapper sysEmployeeMapper;
     private final SysDepartmentMapper sysDepartmentMapper;
@@ -101,6 +104,9 @@ public class UserService {
         user.setRole(request.getRole());
         user.setStatus(1);
         sysUserMapper.insert(user);
+        // 新用户默认挂一个兜底（只读）角色，否则登录后 permissions 为空，前端各行一个 401。
+        // 管理只负责「能看到页面」，具体权限再由角色分配页面调整。
+        sysUserRoleMapper.insert(new SysUserRole(user.getId(), DEFAULT_ROLE_CODE));
         return Map.of("id", user.getId());
     }
 

@@ -392,31 +392,40 @@ function apiOk<T>(response: { code: number; message: string; data: T }) {
   return true
 }
 
+// 下面这些 list* 接口已由 unwrapList 统一解包成数组，失败会抛异常
 async function loadOrders() {
-  const response = await listInboundOrders({ keyword: orderSearchInput.value, status: orderStatus.value })
-  if (apiOk(response)) {
-    orders.value = response.data.map(normalizeOrder)
+  try {
+    orders.value = (await listInboundOrders({ keyword: orderSearchInput.value, status: orderStatus.value })).map(normalizeOrder)
+  } catch (error: any) {
+    ElMessage.error(error?.message || '加载入库单失败')
   }
 }
 
 async function loadDetails() {
-  const response = await listInboundDetails({ keyword: detailSearch.value, method: detailMethod.value })
-  if (apiOk(response)) {
-    inboundRecords.value = response.data.map(normalizeRecord)
+  try {
+    inboundRecords.value = (await listInboundDetails({ keyword: detailSearch.value, method: detailMethod.value })).map(normalizeRecord)
+  } catch (error: any) {
+    ElMessage.error(error?.message || '加载入库明细失败')
   }
 }
 
 async function loadSnRecords() {
-  const response = await listInboundSn({ keyword: snSearch.value, status: snStatus.value })
-  if (apiOk(response)) {
-    snRecords.value = response.data.map((item) => ({ ...item, outboundCode: item.outboundCode || '-', outboundTime: item.outboundTime || '-', selected: false }))
+  try {
+    snRecords.value = (await listInboundSn({ keyword: snSearch.value, status: snStatus.value }))
+      .map((item) => ({ ...item, outboundCode: item.outboundCode || '-', outboundTime: item.outboundTime || '-', selected: false }))
+  } catch (error: any) {
+    ElMessage.error(error?.message || '加载SN信息失败')
   }
 }
 
 async function loadOptions() {
-  const [warehouseResponse, locationResponse] = await Promise.all([listWarehouses({ status: 1 }), listLocations({ status: 1 })])
-  if (apiOk(warehouseResponse)) warehouses.value = warehouseResponse.data
-  if (apiOk(locationResponse)) locations.value = locationResponse.data
+  try {
+    const [warehouseList, locationList] = await Promise.all([listWarehouses({ status: 1 }), listLocations({ status: 1 })])
+    warehouses.value = warehouseList
+    locations.value = locationList
+  } catch (error: any) {
+    ElMessage.error(error?.message || '加载仓库/库位失败')
+  }
 }
 
 async function refreshAll() {

@@ -1,6 +1,8 @@
 package com.qws.crm;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.contact.ContactBatchDeleteRequest;
 import com.qws.common.dto.contact.ContactDeleteRequest;
@@ -53,6 +55,7 @@ public class ContactController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "CRM", action = ActionType.CREATE, target = "联系人")
     public ApiResult<ContactVO> create(@RequestBody ContactRequest request) {
         try {
             return ApiResult.ok(contactService.create(request));
@@ -62,6 +65,7 @@ public class ContactController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "CRM", action = ActionType.UPDATE, target = "联系人")
     public ApiResult<ContactVO> update(@RequestBody ContactRequest request) {
         try {
             return ApiResult.ok(contactService.update(request));
@@ -71,6 +75,7 @@ public class ContactController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "CRM", action = ActionType.DELETE, target = "联系人")
     public ApiResult<Void> delete(@RequestBody ContactDeleteRequest request) {
         try {
             contactService.delete(request);

@@ -18,6 +18,7 @@ import com.qws.common.mapper.SysRoleMapper;
 import com.qws.common.mapper.SysRolePermissionMapper;
 import com.qws.common.mapper.SysUserMapper;
 import com.qws.common.mapper.SysUserRoleMapper;
+import com.qws.common.security.PermissionCodes;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -203,8 +204,23 @@ public class RoleService {
         role.setStatus("停用".equals(request.getStatus()) ? 0 : 1);
     }
 
+    /**
+     * 角色码归一化 + 合法性校验。
+     *
+     * <p>角色码会被写进 JWT 并最终落到 HTTP 请求头，因此必须是纯 ASCII 的大写标识符。
+     * 历史数据里存在 {@code sys_user.role='普通用户'} 这种中文角色名，它们
+     * 会在网关写 header 时直接炸掉（表现为无关的 401），必须在写入端就拦住。
+     */
     private String normalizeCode(String code) {
-        return code == null ? null : code.trim().toUpperCase();
+        if (!StringUtils.hasText(code)) {
+            throw new IllegalArgumentException("请填写角色编码");
+        }
+        String normalized = code.trim().toUpperCase();
+        if (!PermissionCodes.isWellFormedRoleCode(normalized)) {
+            throw new IllegalArgumentException(
+                    "角色编码只能使用大写字母、数字和下划线，且以字母开头（如 CRM_SALES）：" + code.trim());
+        }
+        return normalized;
     }
 
     private Map<String, Object> buildStats() {

@@ -1,6 +1,9 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
+import com.qws.common.ListResult;
 import com.qws.common.security.RequirePermission;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,9 +28,9 @@ public class InboundController {
     }
 
     @GetMapping("/list")
-    public ApiResult<List<Map<String, Object>>> list(@RequestParam(required = false) String keyword,
+    public ApiResult<ListResult<Map<String, Object>>> list(@RequestParam(required = false) String keyword,
                                                      @RequestParam(required = false) String status) {
-        return ApiResult.ok(inboundService.list(keyword, status));
+        return ApiResult.ok(ListResult.of(inboundService.list(keyword, status)));
     }
 
     @GetMapping("/details")
@@ -49,18 +52,21 @@ public class InboundController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "WMS", action = ActionType.CREATE, target = "入库单")
     public ApiResult<Map<String, Object>> create(@RequestBody Map<String, Object> request) {
         try { return ApiResult.ok(inboundService.create(request)); }
         catch (IllegalArgumentException | IllegalStateException ex) { return ApiResult.fail(ex.getMessage()); }
     }
 
     @PostMapping("/execute")
+    @Audit(module = "WMS", action = ActionType.EXECUTE, target = "执行入库")
     public ApiResult<Map<String, Object>> execute(@RequestBody Map<String, Object> request) {
         try { return ApiResult.ok(inboundService.execute(request)); }
         catch (IllegalArgumentException | IllegalStateException ex) { return ApiResult.fail(ex.getMessage()); }
     }
 
     @PostMapping("/delete")
+    @Audit(module = "WMS", action = ActionType.DELETE, target = "入库单")
     public ApiResult<Void> delete(@RequestBody Map<String, Object> request) {
         Object id = request.get("id");
         if (!(id instanceof Number number)) return ApiResult.fail("缺少入库单ID");

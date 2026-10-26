@@ -1,6 +1,8 @@
 package com.qws.crm;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.deal.DealBatchDeleteRequest;
 import com.qws.common.dto.deal.DealDeleteRequest;
@@ -60,6 +62,7 @@ public class DealController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "CRM", action = ActionType.CREATE, target = "商机")
     public ApiResult<DealVO> create(@RequestBody DealRequest request) {
         try {
             return ApiResult.ok(dealService.create(request));
@@ -69,6 +72,7 @@ public class DealController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "CRM", action = ActionType.UPDATE, target = "商机")
     public ApiResult<DealVO> update(@RequestBody DealRequest request) {
         try {
             return ApiResult.ok(dealService.update(request));
@@ -78,6 +82,7 @@ public class DealController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "CRM", action = ActionType.DELETE, target = "商机")
     public ApiResult<Void> delete(@RequestBody DealDeleteRequest request) {
         try {
             dealService.delete(request);
@@ -88,6 +93,7 @@ public class DealController {
     }
 
     @PostMapping("/batch-delete")
+    @Audit(module = "CRM", action = ActionType.DELETE, target = "商机")
     public ApiResult<Integer> batchDelete(@RequestBody DealBatchDeleteRequest request) {
         return ApiResult.ok(dealService.batchDelete(request));
     }

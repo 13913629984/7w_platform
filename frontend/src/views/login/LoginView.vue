@@ -3,6 +3,15 @@
     <el-card class="login-card" shadow="always">
       <h1 class="login-title">信息化平台</h1>
       <p class="login-subtitle">统一身份认证 · 单点登录入口</p>
+      <el-alert
+        v-if="redirectReason"
+        :title="redirectReason"
+        type="warning"
+        show-icon
+        :closable="true"
+        style="margin-bottom: 16px"
+        @close="redirectReason = ''"
+      />
       <el-form :model="form" label-position="top" @keyup.enter="submit">
         <el-form-item label="用户名">
           <el-input v-model="form.username" prefix-icon="User" placeholder="请输入用户名" />
@@ -17,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
@@ -26,6 +35,19 @@ const router = useRouter()
 const auth = useAuthStore()
 const loading = ref(false)
 const form = reactive({ username: 'admin', password: '123456' })
+
+// 被 401 踢回登录页时，拦截器把原因写进 sessionStorage（页面硬跳转会丢 ElMessage），
+// 这里在挂载后取出来补一条提示，让用户知道「为什么要重新登录」。
+const redirectReason = ref('')
+
+onMounted(() => {
+  const reason = sessionStorage.getItem('auth_redirect_reason')
+  if (reason) {
+    sessionStorage.removeItem('auth_redirect_reason')
+    // 用常驻 alert 而不是 toast：toast 会自己消失，用户可能根本没看到
+    redirectReason.value = reason
+  }
+})
 
 async function submit() {
   loading.value = true

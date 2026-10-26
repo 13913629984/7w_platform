@@ -53,9 +53,10 @@ public class UserContextInterceptor implements HandlerInterceptor {
 
         UserContext context = new UserContext(
                 request.getHeader(HEADER_USER_ID),
-                request.getHeader(HEADER_USERNAME),
+                decode(request.getHeader(HEADER_USERNAME)),
                 split(request.getHeader(HEADER_ROLES)),
-                split(request.getHeader(HEADER_PERMISSIONS)));
+                split(request.getHeader(HEADER_PERMISSIONS)),
+                isWrite(request));
         UserContext.set(context);
 
         if (!(handler instanceof HandlerMethod method)) {
@@ -68,13 +69,23 @@ public class UserContextInterceptor implements HandlerInterceptor {
         }
 
         for (String code : required.value()) {
-            if (!context.hasPermission(code)) {
-                reject(response, HttpServletResponse.SC_FORBIDDEN,
-                        "没有访问权限（缺少权限码 " + code + "）");
+            boolean allowed = context.isWriteRequest()
+                    ? context.hasWritePermission(code, null)
+                    : context.hasPermission(code);
+            if (!allowed) {
+                reject(response, HttpServletResponse.SC_FORBIDDEN, context.describeDenied(code));
                 return false;
             }
         }
         return true;
+    }
+
+    /** 写请求判定：非 GET/HEAD/OPTIONS 都算写 */
+    private static boolean isWrite(HttpServletRequest request) {
+        String httpMethod = request.getMethod();
+        return !("GET".equalsIgnoreCase(httpMethod)
+                || "HEAD".equalsIgnoreCase(httpMethod)
+                || "OPTIONS".equalsIgnoreCase(httpMethod));
     }
 
     @Override
@@ -95,7 +106,20 @@ public class UserContextInterceptor implements HandlerInterceptor {
         return Arrays.stream(header.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
+                // 网关会把含非 ASCII 的角色名/用户名做 percent-encode（HTTP header 只能是 ASCII），
+                // 这里编码回来，业务代码拿到的才是原始值。
+                .map(UserContextInterceptor::decode)
                 .toList();
+    }
+
+    /** percent-decode；纯 ASCII 原样返回，不抛异常（旧数据/未编码值也兼容） */
+    private static String decode(String value) {
+        if (value == null || value.indexOf('%') < 0) return value;
+        try {
+            return java.net.URLDecoder.decode(value, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException ex) {
+            return value;
+        }
     }
 
     private void reject(HttpServletResponse response, int status, String message) throws Exception {

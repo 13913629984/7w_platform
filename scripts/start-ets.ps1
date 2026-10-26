@@ -48,13 +48,26 @@ $startArgs = @{
 }
 $proc = Start-Process @startArgs
 
-# Wait for the port to open
+# Wait until the service reports healthy.
+# 只探端口不够：Tomcat 会先绑定端口、再完成 Spring 上下文初始化，
+# 这中间前端打过来的请求会 502/500。改用 /actuator/health 才算真正就绪。
 $up = $false
-for ($i = 0; $i -lt 60; $i++) {
+for ($i = 0; $i -lt 90; $i++) {
     Start-Sleep -Seconds 1
-    if (Test-NetConnection -ComputerName 'localhost' -Port $Port -InformationLevel Quiet 2>$null) {
-        $up = $true
-        Write-Host "[READY] $service is up (after ~${i}s, PID=$($proc.Id))" -ForegroundColor Green
+    try {
+        $resp = Invoke-WebRequest -Uri "http://localhost:$Port/actuator/health" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+        if ($resp.StatusCode -eq 200 -and $resp.Content -match '"UP"') {
+            $up = $true
+            Write-Host "[READY] $service is healthy (after ~${i}s, PID=$($proc.Id))" -ForegroundColor Green
+            break
+        }
+    } catch {
+        # 还没起来，继续等
+    }
+    # 进程已退出就没必要继续等
+    if ($proc.HasExited) {
+        Write-Host "[ERROR] $service exited early (exit code $($proc.ExitCode)). Tail of ${logOut}:" -ForegroundColor Red
+        Get-Content $logOut -Tail 30 -ErrorAction SilentlyContinue
         break
     }
 }

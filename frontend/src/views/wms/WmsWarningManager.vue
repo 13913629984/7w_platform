@@ -314,11 +314,8 @@ async function loadData() {
       listWarnings({ keyword: keyword.value.trim() || undefined, level: levelFilter.value || undefined, status: statusFilter.value || undefined }),
       getWarningStats(),
     ])
-    if (listRes.code !== 0) {
-      ElMessage.error(listRes.message || '加载预警失败')
-      return
-    }
-    rows.value = listRes.data || []
+    // listWarnings 已由 unwrapList 解包成数组（失败抛异常）
+    rows.value = listRes || []
     const maxPage = Math.max(1, Math.ceil(rows.value.length / pageSize.value))
     if (page.value > maxPage) page.value = maxPage
     if (statsRes.code === 0) stats.value = statsRes.data
@@ -337,11 +334,7 @@ async function loadRules() {
       scope: ruleScopeFilter.value || undefined,
       enabled: ruleEnabledFilter.value === '' ? undefined : Number(ruleEnabledFilter.value),
     })
-    if (res.code !== 0) {
-      ElMessage.error(res.message || '加载预警规则失败')
-      return
-    }
-    rules.value = res.data || []
+    rules.value = res || []
     const maxPage = Math.max(1, Math.ceil(rules.value.length / rulePageSize.value))
     if (rulePage.value > maxPage) rulePage.value = maxPage
   } catch (error: any) {
@@ -515,8 +508,8 @@ async function searchMaterials(query: string) {
 async function ensureWarehouseOptions() {
   if (warehouseOptions.value.length) return
   try {
-    const res = await listWarehouses({})
-    if (res.code === 0) warehouseOptions.value = res.data || []
+    // listWarehouses 已由 unwrapList 解包成数组
+    warehouseOptions.value = (await listWarehouses({})) || []
   } catch {
     warehouseOptions.value = []
   }

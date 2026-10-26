@@ -1,6 +1,8 @@
 package com.qws.system;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.UserVO;
 import com.qws.common.dto.role.PermissionVO;
@@ -57,6 +59,7 @@ public class RoleController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "SYS", action = ActionType.CREATE, target = "角色")
     public ApiResult<Map<String, Object>> create(@RequestBody RoleRequest request) {
         try {
             return ApiResult.ok(roleService.create(request));
@@ -66,6 +69,7 @@ public class RoleController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "SYS", action = ActionType.UPDATE, target = "角色")
     public ApiResult<Void> update(@RequestBody RoleRequest request) {
         try {
             roleService.update(request);
@@ -78,6 +82,7 @@ public class RoleController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "SYS", action = ActionType.DELETE, target = "角色")
     public ApiResult<Void> delete(@RequestBody RoleDeleteRequest request) {
         try {
             roleService.delete(request.getId());

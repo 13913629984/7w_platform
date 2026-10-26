@@ -3,6 +3,8 @@ package com.qws.crm;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.quote.QuoteDeleteRequest;
 import com.qws.common.dto.quote.QuoteListResult;
@@ -91,6 +93,7 @@ public class CrmQuoteController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "CRM", action = ActionType.CREATE, target = "报价")
     public ApiResult<QuoteVO> create(@RequestBody QuoteRequest request) {
         try {
             validate(request);
@@ -105,6 +108,7 @@ public class CrmQuoteController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "CRM", action = ActionType.UPDATE, target = "报价")
     public ApiResult<QuoteVO> update(@RequestBody QuoteRequest request) {
         try {
             if (request.getId() == null) throw new IllegalArgumentException("请选择要修改的报价");
@@ -120,6 +124,7 @@ public class CrmQuoteController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "CRM", action = ActionType.DELETE, target = "报价")
     public ApiResult<Void> delete(@RequestBody QuoteDeleteRequest request) {
         try {
             if (request.getId() == null && (request.getIds() == null || request.getIds().isEmpty())) {

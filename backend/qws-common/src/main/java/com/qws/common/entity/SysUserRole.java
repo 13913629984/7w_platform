@@ -19,6 +19,15 @@ public class SysUserRole {
     @TableField("create_time")
     private LocalDateTime createTime;
 
+    public SysUserRole() {
+    }
+
+    public SysUserRole(Long userId, String roleCode) {
+        this.userId = userId;
+        this.roleCode = roleCode;
+        this.createTime = LocalDateTime.now();
+    }
+
     public Long getId() {
         return id;
     }

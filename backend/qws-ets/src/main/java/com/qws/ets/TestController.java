@@ -1,6 +1,8 @@
 package com.qws.ets;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.ets.TestDeleteRequest;
 import com.qws.common.dto.ets.TestListResult;
@@ -73,6 +75,7 @@ public class TestController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "ETS", action = ActionType.CREATE, target = "测试任务")
     public ApiResult<TestVO> create(@RequestBody TestRequest request) {
         try {
             return ApiResult.ok(testService.create(request));
@@ -82,6 +85,7 @@ public class TestController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "ETS", action = ActionType.UPDATE, target = "测试任务")
     public ApiResult<TestVO> update(@RequestBody TestRequest request) {
         try {
             return ApiResult.ok(testService.update(request));
@@ -91,6 +95,7 @@ public class TestController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "ETS", action = ActionType.DELETE, target = "测试任务")
     public ApiResult<Void> delete(@RequestBody TestDeleteRequest request) {
         try {
             testService.delete(request);

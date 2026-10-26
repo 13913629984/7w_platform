@@ -694,8 +694,9 @@ async function loadOptions() {
       listBrands({ status: 1 }),
       listSuppliers({ status: 1 }),
     ])
-    if (brandRes.code === 0) brands.value = brandRes.data || []
-    if (supplierRes.code === 0) suppliers.value = supplierRes.data || []
+    // listBrands / listSuppliers 已由 unwrapList 解包成数组
+    brands.value = brandRes || []
+    suppliers.value = supplierRes || []
   } catch {
     // 下拉选项加载失败不阻塞主流程
   }

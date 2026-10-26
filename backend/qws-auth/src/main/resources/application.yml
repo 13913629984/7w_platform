@@ -32,3 +32,14 @@ jwt:
 qws:
   security:
     require-signature: false
+
+# actuator：只暴露 health/info，供启动脚本与网关做就绪探测。
+# 之前这些服务没有健康端点，启动脚本只能探端口，容易把「端口已开但 Spring 未就绪」当成可用。
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never

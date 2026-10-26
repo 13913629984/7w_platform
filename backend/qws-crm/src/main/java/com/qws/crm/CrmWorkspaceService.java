@@ -72,7 +72,7 @@ public class CrmWorkspaceService {
                 .filter(d -> !CLOSED_DEAL_STATUS.contains(d.getStatus()))
                 .count();
 
-        // 本月成交：本月签订的订单金额合计（单位：万）
+        // 本月成交：本月签订的订单金额合计（单位：元）
         BigDecimal monthDealAmount = orderMapper.selectList(null).stream()
                 .filter(o -> o.getSignDate() != null && !o.getSignDate().isBefore(firstDayOfMonth))
                 .map(o -> o.getAmount() == null ? BigDecimal.ZERO : o.getAmount())

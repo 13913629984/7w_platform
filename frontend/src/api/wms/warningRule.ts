@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { unwrapList } from '@/api/list'
 
 export type WarningRuleScope = 'global' | 'material'
 
@@ -41,7 +42,7 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<Ap
 }
 
 export function listWarningRules(params: WarningRuleQuery = {}) {
-  return unwrap<WarningRuleItem[]>(request.get('/wms/warning/rule/list', { params }))
+  return unwrapList<WarningRuleItem>(request.get('/wms/warning/rule/list', { params }))
 }
 
 export function getWarningRule(id: number) {

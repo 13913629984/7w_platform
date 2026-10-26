@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { unwrapList } from '@/api/list'
 
 export type InboundMethod = 'qty' | 'sn'
 export type InboundStatus = 'completed' | 'partial' | 'pending'
@@ -112,15 +113,15 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<Ap
 }
 
 export function listInboundOrders(params: InboundQuery = {}) {
-  return unwrap<InboundOrder[]>(request.get('/wms/inbound/list', { params }))
+  return unwrapList<InboundOrder>(request.get('/wms/inbound/list', { params }))
 }
 
 export function listInboundDetails(params: InboundDetailQuery = {}) {
-  return unwrap<InboundRecord[]>(request.get('/wms/inbound/details', { params }))
+  return unwrapList<InboundRecord>(request.get('/wms/inbound/details', { params }))
 }
 
 export function listInboundSn(params: InboundSnQuery = {}) {
-  return unwrap<InboundSnRecord[]>(request.get('/wms/inbound/sn', { params }))
+  return unwrapList<InboundSnRecord>(request.get('/wms/inbound/sn', { params }))
 }
 
 export function getInboundOrder(id: number) {

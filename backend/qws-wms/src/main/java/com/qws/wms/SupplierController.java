@@ -1,6 +1,8 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.supplier.SupplierDeleteRequest;
 import com.qws.common.dto.supplier.SupplierRequest;
@@ -50,6 +52,7 @@ public class SupplierController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "WMS", action = ActionType.CREATE, target = "供应商")
     public ApiResult<SupplierVO> create(@RequestBody SupplierRequest request) {
         try {
             return ApiResult.ok(supplierService.create(request));
@@ -59,6 +62,7 @@ public class SupplierController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "WMS", action = ActionType.UPDATE, target = "供应商")
     public ApiResult<SupplierVO> update(@RequestBody SupplierRequest request) {
         try {
             return ApiResult.ok(supplierService.update(request));
@@ -68,6 +72,7 @@ public class SupplierController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "WMS", action = ActionType.DELETE, target = "供应商")
     public ApiResult<Void> delete(@RequestBody SupplierDeleteRequest request) {
         try {
             supplierService.delete(request.getId());

@@ -172,6 +172,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { downloadCsvFromRows } from '@/utils/export'
 import {
   listCollections,
   listAllocations,
@@ -357,7 +358,20 @@ function allocTagType(status: string) {
 }
 
 function handleExport() {
-  ElMessage.success('导出成功')
+  if (!collections.value.length) {
+    ElMessage.warning('暂无可导出的成本归集数据')
+    return
+  }
+  downloadCsvFromRows('成本归集', [
+    { label: '归集单号', value: (r) => r.code },
+    { label: '成本类型', value: (r) => r.costType },
+    { label: '来源单据', value: (r) => r.paymentCode || '' },
+    { label: '归集对象', value: (r) => r.object },
+    { label: '金额', value: (r) => Number(r.amount || 0).toFixed(2) },
+    { label: '分配状态', value: (r) => r.allocStatus },
+    { label: '归集日期', value: (r) => r.date },
+  ], collections.value)
+  ElMessage.success('已导出成本归集数据')
 }
 function handleRefresh() {
   loadAll()

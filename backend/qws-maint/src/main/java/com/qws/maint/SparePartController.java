@@ -1,6 +1,8 @@
 package com.qws.maint;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.maint.MaintListResult;
 import com.qws.common.dto.maint.SparePartDeleteRequest;
@@ -53,6 +55,7 @@ public class SparePartController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "MAINT", action = ActionType.CREATE, target = "备件")
     public ApiResult<SparePartVO> create(@RequestBody SparePartRequest request) {
         try {
             return ApiResult.ok(sparePartService.create(request));
@@ -62,6 +65,7 @@ public class SparePartController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "MAINT", action = ActionType.UPDATE, target = "备件")
     public ApiResult<SparePartVO> update(@RequestBody SparePartRequest request) {
         try {
             return ApiResult.ok(sparePartService.update(request));
@@ -71,6 +75,7 @@ public class SparePartController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "MAINT", action = ActionType.DELETE, target = "备件")
     public ApiResult<Void> delete(@RequestBody SparePartDeleteRequest request) {
         try {
             sparePartService.delete(request == null ? null : request.getId());

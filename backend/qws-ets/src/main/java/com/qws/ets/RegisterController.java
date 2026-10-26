@@ -1,6 +1,8 @@
 package com.qws.ets;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.ets.RegisterDeleteRequest;
 import com.qws.common.dto.ets.RegisterListResult;
@@ -71,6 +73,7 @@ public class RegisterController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "ETS", action = ActionType.CREATE, target = "来货登记")
     public ApiResult<RegisterVO> create(@RequestBody RegisterRequest request) {
         try {
             return ApiResult.ok(registerService.create(request));
@@ -80,6 +83,7 @@ public class RegisterController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "ETS", action = ActionType.UPDATE, target = "来货登记")
     public ApiResult<RegisterVO> update(@RequestBody RegisterRequest request) {
         try {
             return ApiResult.ok(registerService.update(request));
@@ -89,6 +93,7 @@ public class RegisterController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "ETS", action = ActionType.DELETE, target = "来货登记")
     public ApiResult<Void> delete(@RequestBody RegisterDeleteRequest request) {
         try {
             registerService.delete(request);

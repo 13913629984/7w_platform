@@ -192,8 +192,12 @@ function formatNumber(value?: number) {
 }
 
 async function loadWarehouses() {
-  const res = await listWarehouses({ status: 1 })
-  if (res.code === 0) warehouses.value = res.data || []
+  // listWarehouses 已由 unwrapList 解包成数组
+  try {
+    warehouses.value = (await listWarehouses({ status: 1 })) || []
+  } catch {
+    warehouses.value = []
+  }
 }
 
 async function loadData() {
@@ -204,11 +208,8 @@ async function loadData() {
       listLocations({ keyword: keyword.value.trim() || undefined, warehouseCode: warehouseFilter.value || undefined, type: typeFilter.value || undefined, status: statusFilter.value }),
       getLocationStats(),
     ])
-    if (listRes.code !== 0) {
-      ElMessage.error(listRes.message || '加载库位失败')
-      return
-    }
-    rows.value = listRes.data || []
+    // 列表接口已由 unwrapList 统一解包成数组（失败抛异常走 catch）
+    rows.value = listRes || []
     const maxPage = Math.max(1, Math.ceil(rows.value.length / pageSize.value))
     if (page.value > maxPage) page.value = maxPage
     if (statsRes.code === 0) stats.value = statsRes.data

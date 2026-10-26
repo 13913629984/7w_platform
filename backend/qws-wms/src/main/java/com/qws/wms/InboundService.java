@@ -8,7 +8,9 @@ import com.qws.common.entity.InboundSn;
 import com.qws.common.entity.Inventory;
 import com.qws.common.entity.Location;
 import com.qws.common.entity.Material;
+import com.qws.common.entity.PurchaseOrder;
 import com.qws.common.entity.Warehouse;
+import com.qws.common.fin.FinBillingService;
 import com.qws.common.mapper.InboundItemMapper;
 import com.qws.common.mapper.InboundOrderMapper;
 import com.qws.common.mapper.InboundRecordMapper;
@@ -16,6 +18,7 @@ import com.qws.common.mapper.InboundSnMapper;
 import com.qws.common.mapper.InventoryMapper;
 import com.qws.common.mapper.LocationMapper;
 import com.qws.common.mapper.MaterialMapper;
+import com.qws.common.mapper.PurchaseOrderMapper;
 import com.qws.common.mapper.WarehouseMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,11 +41,14 @@ public class InboundService {
     private final InboundSnMapper snMapper;
     private final InventoryMapper inventoryMapper;
     private final MaterialMapper materialMapper;
+    private final PurchaseOrderMapper purchaseOrderMapper;
+    private final FinBillingService finBillingService;
     private final WarehouseMapper warehouseMapper;
     private final LocationMapper locationMapper;
 
     public InboundService(InboundOrderMapper orderMapper, InboundItemMapper itemMapper, InboundRecordMapper recordMapper,
                           InboundSnMapper snMapper, InventoryMapper inventoryMapper, MaterialMapper materialMapper,
+                          PurchaseOrderMapper purchaseOrderMapper, FinBillingService finBillingService,
                           WarehouseMapper warehouseMapper, LocationMapper locationMapper) {
         this.orderMapper = orderMapper;
         this.itemMapper = itemMapper;
@@ -50,6 +56,8 @@ public class InboundService {
         this.snMapper = snMapper;
         this.inventoryMapper = inventoryMapper;
         this.materialMapper = materialMapper;
+        this.purchaseOrderMapper = purchaseOrderMapper;
+        this.finBillingService = finBillingService;
         this.warehouseMapper = warehouseMapper;
         this.locationMapper = locationMapper;
     }
@@ -287,7 +295,35 @@ public class InboundService {
         order.setStatus(status);
         order.setUpdateTime(now);
         orderMapper.updateById(order);
+
+        // 入库完成后回写上游采购订单 + 生成应付款（同一事务，异常一起回滚）
+        syncPurchaseOrder(order, status, now);
+        if ("completed".equals(status)) {
+            finBillingService.createPayableForPurchase(text(order.getPoCode()), text(order.getCode()),
+                    text(order.getSupplier()), nz(order.getTotalAmount()), BigDecimal.ZERO);
+        }
         return detail(orderId);
+    }
+
+    /**
+     * 回写采购订单：回填入库单号，状态统一置为 {@code inbound}（前端「已入库」）。
+     *
+     * <p>注意：即使是部分入库也保持 {@code inbound}，因为「生成入库单」的入口已经关闭。
+     * 若回退成 {@code confirmed}，用户会再次看到「生成入库单」按钮，
+     * 但入库单号 {@code IN-<poCode>} 已存在，只会得到一错误。
+     */
+    private void syncPurchaseOrder(InboundOrder inbound, String inboundStatus, LocalDateTime now) {
+        String poCode = text(inbound.getPoCode());
+        if (!StringUtils.hasText(poCode)) return;
+        PurchaseOrder po = purchaseOrderMapper.selectOne(new LambdaQueryWrapper<PurchaseOrder>()
+                .eq(PurchaseOrder::getCode, poCode).last("LIMIT 1"));
+        if (po == null) return;
+        po.setInboundCode(text(inbound.getCode()));
+        if (!"cancelled".equals(text(po.getStatus()))) {
+            po.setStatus("inbound");
+        }
+        po.setUpdateTime(now);
+        purchaseOrderMapper.updateById(po);
     }
 
     @Transactional
@@ -333,17 +369,30 @@ public class InboundService {
     private String defaultLocation(String warehouseCode) {
         Location location = locationMapper.selectOne(new LambdaQueryWrapper<Location>()
                 .eq(Location::getWarehouseCode, warehouseCode)
+                .eq(Location::getStatus, 1)
                 .orderByAsc(Location::getSort).orderByAsc(Location::getId).last("LIMIT 1"));
         if (location != null) return location.getCode();
-        Location any = locationMapper.selectOne(new LambdaQueryWrapper<Location>()
-                .orderByAsc(Location::getSort).orderByAsc(Location::getId).last("LIMIT 1"));
-        return any == null ? "DEFAULT" : any.getCode();
+        // 不再回退到全局第一个库位、也不再落 DEFAULT（那是 location 表里根本不存在的幽灵码，
+        // 会让后续出库/盘点全部匹配不到）。实在没有库位就让业务显式报错。
+        throw new IllegalStateException("仓库 " + warehouseCode + " 未配置可用库位，请先在库位管理中新增库位");
     }
 
     private void increaseInventory(InboundItem item, InboundOrder order, String locationCode, BigDecimal qty, LocalDateTime now) {
         Long materialId = item.getMaterialId();
         String warehouseCode = text(order.getWarehouseCode());
         String batchNo = text(item.getBatchNo());
+
+        // 与出库对齐：库位必须存在且属于入库单指定的仓库，避免把库存写到跨仓库位/幽灵库位上
+        Location location = locationMapper.selectOne(new LambdaQueryWrapper<Location>()
+                .eq(Location::getCode, locationCode).last("LIMIT 1"));
+        if (location == null) {
+            throw new IllegalStateException("库位不存在：" + locationCode);
+        }
+        if (!warehouseCode.equals(text(location.getWarehouseCode()))) {
+            throw new IllegalStateException("库位 " + locationCode + " 属于仓库 " + location.getWarehouseCode()
+                    + "，与入库单仓库 " + warehouseCode + " 不一致");
+        }
+
         Inventory inventory = inventoryMapper.selectList(new LambdaQueryWrapper<Inventory>()
                         .eq(Inventory::getMaterialId, materialId)
                         .eq(Inventory::getWarehouseCode, warehouseCode)

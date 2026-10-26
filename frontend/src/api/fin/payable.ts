@@ -17,6 +17,7 @@ export interface Payable {
 }
 
 export interface PendingReceipt {
+  id?: number
   code: string
   purchaseOrder: string
   supplier: string

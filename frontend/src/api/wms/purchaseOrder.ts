@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { unwrapList } from '@/api/list'
 
 export type POStatus = 'pending' | 'confirmed' | 'inbound' | 'cancelled'
 
@@ -55,7 +56,7 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<Ap
 }
 
 export function listPurchaseOrders(params: POQuery = {}) {
-  return unwrap<PurchaseOrder[]>(request.get('/wms/purchase-order/list', { params }))
+  return unwrapList<PurchaseOrder>(request.get('/wms/purchase-order/list', { params }))
 }
 
 export function getPOStats() {

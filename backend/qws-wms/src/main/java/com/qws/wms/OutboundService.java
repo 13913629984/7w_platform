@@ -1,6 +1,7 @@
 package com.qws.wms;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.qws.common.entity.CrmOrder;
 import com.qws.common.entity.InboundOrder;
 import com.qws.common.entity.InboundSn;
 import com.qws.common.entity.Inventory;
@@ -10,6 +11,8 @@ import com.qws.common.entity.OutboundItem;
 import com.qws.common.entity.OutboundOrder;
 import com.qws.common.entity.OutboundRecord;
 import com.qws.common.entity.Warehouse;
+import com.qws.common.fin.FinBillingService;
+import com.qws.common.mapper.CrmOrderMapper;
 import com.qws.common.mapper.InboundOrderMapper;
 import com.qws.common.mapper.InboundSnMapper;
 import com.qws.common.mapper.InventoryMapper;
@@ -43,10 +46,13 @@ public class OutboundService {
     private final MaterialMapper materialMapper;
     private final WarehouseMapper warehouseMapper;
     private final LocationMapper locationMapper;
+    private final CrmOrderMapper crmOrderMapper;
+    private final FinBillingService finBillingService;
 
     public OutboundService(OutboundOrderMapper orderMapper, OutboundItemMapper itemMapper, OutboundRecordMapper recordMapper,
                            InboundSnMapper snMapper, InboundOrderMapper inboundOrderMapper, InventoryMapper inventoryMapper,
-                           MaterialMapper materialMapper, WarehouseMapper warehouseMapper, LocationMapper locationMapper) {
+                           MaterialMapper materialMapper, WarehouseMapper warehouseMapper, LocationMapper locationMapper,
+                           CrmOrderMapper crmOrderMapper, FinBillingService finBillingService) {
         this.orderMapper = orderMapper;
         this.itemMapper = itemMapper;
         this.recordMapper = recordMapper;
@@ -56,6 +62,8 @@ public class OutboundService {
         this.materialMapper = materialMapper;
         this.warehouseMapper = warehouseMapper;
         this.locationMapper = locationMapper;
+        this.crmOrderMapper = crmOrderMapper;
+        this.finBillingService = finBillingService;
     }
 
     public List<Map<String, Object>> list(String keyword, String status) {
@@ -282,7 +290,35 @@ public class OutboundService {
         order.setStatus(status);
         order.setUpdateTime(now);
         orderMapper.updateById(order);
+
+        // 出库完成后回写上游销售订单 + 生成应收款（同一事务）
+        syncSalesOrder(order, status, now);
+        if ("completed".equals(status)) {
+            finBillingService.createReceivableForSales(text(order.getOrderNo()), null,
+                    text(order.getCustomer()), nz(order.getTotalAmount()), 30);
+        }
         return detail(orderId);
+    }
+
+    /**
+     * 回写 CRM 销售订单状态：
+     * 出库全部完成 → 已发货 → 已完成（有出库单号且已全额出库）；
+     * 部分出库 → 保持已发货，等剩余部分执行。
+     */
+    private void syncSalesOrder(OutboundOrder outbound, String outboundStatus, LocalDateTime now) {
+        String orderNo = text(outbound.getOrderNo());
+        if (!StringUtils.hasText(orderNo)) return;
+        CrmOrder crmOrder = crmOrderMapper.selectOne(new LambdaQueryWrapper<CrmOrder>()
+                .eq(CrmOrder::getOrderNo, orderNo).last("LIMIT 1"));
+        if (crmOrder == null) return;
+        crmOrder.setOutboundCode(text(outbound.getCode()));
+        if ("completed".equals(outboundStatus)) {
+            crmOrder.setStatus("已完成");
+        } else if (!"已发货".equals(text(crmOrder.getStatus()))) {
+            crmOrder.setStatus("已发货");
+        }
+        crmOrder.setUpdateTime(now);
+        crmOrderMapper.updateById(crmOrder);
     }
 
     @Transactional
@@ -296,6 +332,19 @@ public class OutboundService {
         Long materialId = item.getMaterialId();
         String warehouseCode = text(order.getWarehouseCode());
         String batchNo = text(item.getBatchNo());
+
+        // 前置校验：库位必须存在，且属于出库单指定的仓库。
+        // 否则后面的库存查询会一无所获，只能报出含糊的「库存不存在」。
+        Location location = locationMapper.selectOne(new LambdaQueryWrapper<Location>()
+                .eq(Location::getCode, locationCode).last("LIMIT 1"));
+        if (location == null) {
+            throw new IllegalStateException("库位不存在：" + locationCode);
+        }
+        if (!warehouseCode.equals(text(location.getWarehouseCode()))) {
+            throw new IllegalStateException("库位 " + locationCode + " 属于仓库 " + location.getWarehouseCode()
+                    + "，与出库单仓库 " + warehouseCode + " 不一致");
+        }
+
         Inventory inventory = inventoryMapper.selectList(new LambdaQueryWrapper<Inventory>()
                         .eq(Inventory::getMaterialId, materialId)
                         .eq(Inventory::getWarehouseCode, warehouseCode)
@@ -311,7 +360,11 @@ public class OutboundService {
                             .orderByAsc(Inventory::getId).last("LIMIT 1")).stream()
                     .findFirst().orElse(null);
         }
-        if (inventory == null) throw new IllegalStateException("库存不存在，无法出库");
+        if (inventory == null) {
+            Material material = materialMapper.selectById(materialId);
+            throw new IllegalStateException("仓库 " + warehouseCode + " 的库位 " + locationCode + " 没有物料「"
+                    + (material == null ? materialId : material.getName()) + "」的库存，无法出库");
+        }
         if (nz(inventory.getAvailableQty()).compareTo(qty) < 0) throw new IllegalStateException("可用库存不足，无法出库");
         inventory.setQuantity(nz(inventory.getQuantity()).subtract(qty));
         inventory.setAvailableQty(nz(inventory.getAvailableQty()).subtract(qty));

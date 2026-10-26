@@ -84,7 +84,16 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             String uname = claims.getSubject();
             String roles = join(claims.get("roles"));
             String perms = join(claims.get("permissions"));
-            String signature = InternalSignature.compute(internalSecret, uid, uname, roles, perms);
+
+            // HTTP header 只能是 ASCII（Tomcat 不允向 header 写非 ASCII，否则直接 400/乱码）。
+            // 用户名与角色名可能是中文（历史数据里就有"普通用户"），
+            // 统一在网关侧 percent-encode，下游 UserContextInterceptor 再 decode。
+            // 签名在「已编码值」上计算，保证两侧 payload 完全一致。
+            String uidHeader = encodeHeader(uid);
+            String unameHeader = encodeHeader(uname);
+            String rolesHeader = encodeHeaderList(roles);
+            String permsHeader = encodeHeaderList(perms);
+            String signature = InternalSignature.compute(internalSecret, uidHeader, unameHeader, rolesHeader, permsHeader);
 
             ServerHttpRequest mutated = exchange.getRequest().mutate()
                     .headers(headers -> {
@@ -94,10 +103,10 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                         headers.remove(HEADER_ROLES);
                         headers.remove(HEADER_PERMISSIONS);
                         headers.remove(InternalSignature.HEADER);
-                        put(headers, HEADER_USER_ID, uid);
-                        put(headers, HEADER_USERNAME, uname);
-                        put(headers, HEADER_ROLES, roles);
-                        put(headers, HEADER_PERMISSIONS, perms);
+                        put(headers, HEADER_USER_ID, uidHeader);
+                        put(headers, HEADER_USERNAME, unameHeader);
+                        put(headers, HEADER_ROLES, rolesHeader);
+                        put(headers, HEADER_PERMISSIONS, permsHeader);
                         put(headers, InternalSignature.HEADER, signature);
                     })
                     .build();
@@ -120,6 +129,36 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         }
     }
 
+    /**
+     * 把可能含非 ASCII 的头值转成纯 ASCII（RFC 3986 percent-encoding）。
+     * 纯 ASCII 值保持原样，不做多余转义（否则会让下游的逗号分隔解析变复杂）。
+     */
+    static String encodeHeader(String value) {
+        if (!StringUtils.hasText(value)) {
+            return value;
+        }
+        boolean ascii = value.chars().allMatch(c -> c >= 0x20 && c < 0x7F);
+        if (ascii) {
+            return value;
+        }
+        return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 逗号分隔的列表头：逐个元素编码后再拼回逗号。
+     * 不能整体编码——整体编码会把分隔符逗号也编成 {@code %2C}，下游就拆不出多个值了。
+     */
+    static String encodeHeaderList(String value) {
+        if (!StringUtils.hasText(value)) {
+            return value;
+        }
+        return java.util.Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .map(JwtAuthFilter::encodeHeader)
+                .collect(java.util.stream.Collectors.joining(","));
+    }
+
     @SuppressWarnings("unchecked")
     private static String join(Object claim) {
         if (claim instanceof List<?> list) {
@@ -128,23 +167,32 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         return claim == null ? null : String.valueOf(claim);
     }
 
+    /**
+     * 白名单判定。
+     *
+     * <p><b>关键事实</b>（实测得出，别再改错）：{@code GlobalFilter} 拿到的
+     * {@code exchange.getRequest().getURI().getPath()} 是 <b>StripPrefix 已生效</b>后的
+     * 路径。例如外部请求 {@code /api/auth/login}，经过 {@code Path=/api/auth/** +
+     * StripPrefix=1} 路由后，filter 里看到的是 {@code /auth/login}。
+     *
+     * <p>因此必须<b>两种形态都匹配</b>：
+     * <ul>
+     *   <li>剥离后：{@code /auth/login}（StripPrefix 路由）</li>
+     *   <li>原始：{@code /api/auth/login}（未配置 StripPrefix 的路由，如 actuator 直通）</li>
+     * </ul>
+     * 只匹配一种就会漏掉另一类路由，表现为"登录接口莫名 401"。
+     */
     private boolean isWhitelisted(String path) {
-        // 注意：Spring Cloud Gateway 的 StripPrefix 是在路由阶段生效的，GlobalFilter 看到的是
-        // 剥离前的原始路径。两种形态都要兼容，避免白名单形同虚设。
-        for (String candidate : new String[]{path, stripApiPrefix(path)}) {
-            if (candidate == null) continue;
-            if (MATCHER.match("/auth/login", candidate) || MATCHER.match("/auth/profile", candidate)) {
-                return true;
-            }
-            if (whitelist.stream().anyMatch(pattern -> MATCHER.match(pattern, candidate))) {
-                return true;
-            }
+        if (path == null) {
+            return false;
         }
-        return false;
+        return whitelist.stream().anyMatch(pattern ->
+                MATCHER.match(pattern, path) || MATCHER.match(pattern, withApiPrefix(path)));
     }
 
-    private static String stripApiPrefix(String path) {
-        return path != null && path.startsWith("/api/") ? path.substring(4) : null;
+    /** 给剥离后的路径补回 /api 前缀，用于比对配置里以 /api 开头的白名单项 */
+    private static String withApiPrefix(String path) {
+        return path.startsWith("/api/") ? path : "/api" + path;
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {

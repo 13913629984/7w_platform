@@ -1,6 +1,8 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.bom.BomDeleteRequest;
 import com.qws.common.dto.bom.BomNodeMaterialRequest;
@@ -51,6 +53,7 @@ public class BomController {
     }
 
     @PostMapping("/products/create")
+    @Audit(module = "WMS", action = ActionType.CREATE, target = "BOM产品")
     public ApiResult<BomProductVO> createProduct(@RequestBody BomProductRequest request) {
         try {
             return ApiResult.ok(bomService.createProduct(request));
@@ -60,6 +63,7 @@ public class BomController {
     }
 
     @PostMapping("/products/update")
+    @Audit(module = "WMS", action = ActionType.UPDATE, target = "BOM产品")
     public ApiResult<BomProductVO> updateProduct(@RequestBody BomProductRequest request) {
         try {
             return ApiResult.ok(bomService.updateProduct(request));
@@ -69,6 +73,7 @@ public class BomController {
     }
 
     @PostMapping("/products/delete")
+    @Audit(module = "WMS", action = ActionType.DELETE, target = "BOM产品")
     public ApiResult<Void> deleteProduct(@RequestBody BomDeleteRequest request) {
         try {
             bomService.deleteProduct(request.getId());
@@ -97,6 +102,7 @@ public class BomController {
     }
 
     @PostMapping("/nodes/save")
+    @Audit(module = "WMS", action = ActionType.CREATE, target = "BOM节点")
     public ApiResult<BomNodeVO> saveNode(@RequestBody BomNodeRequest request) {
         try {
             return ApiResult.ok(bomService.saveNode(request));
@@ -106,6 +112,7 @@ public class BomController {
     }
 
     @PostMapping("/nodes/delete")
+    @Audit(module = "WMS", action = ActionType.DELETE, target = "BOM节点")
     public ApiResult<Void> deleteNode(@RequestBody BomDeleteRequest request) {
         try {
             bomService.deleteNode(request.getId());

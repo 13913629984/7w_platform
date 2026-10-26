@@ -1,6 +1,8 @@
 package com.qws.crm;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.activity.ActivityDeleteRequest;
 import com.qws.common.dto.activity.ActivityListResult;
@@ -53,6 +55,7 @@ public class ActivityController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "CRM", action = ActionType.CREATE, target = "跟进活动")
     public ApiResult<ActivityVO> create(@RequestBody ActivityRequest request) {
         try {
             return ApiResult.ok(activityService.create(request));
@@ -62,6 +65,7 @@ public class ActivityController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "CRM", action = ActionType.UPDATE, target = "跟进活动")
     public ApiResult<ActivityVO> update(@RequestBody ActivityRequest request) {
         try {
             return ApiResult.ok(activityService.update(request));
@@ -71,6 +75,7 @@ public class ActivityController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "CRM", action = ActionType.DELETE, target = "跟进活动")
     public ApiResult<Void> delete(@RequestBody ActivityDeleteRequest request) {
         try {
             activityService.delete(request);

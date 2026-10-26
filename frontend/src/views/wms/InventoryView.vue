@@ -168,9 +168,10 @@ async function loadOptions() {
     listWarehouses({ status: 1 }),
     listLocations({ status: 1 }),
   ])
+  // materials 仍是分页对象；warehouses / locations 已由 unwrapList 解包成数组
   if (matRes.code === 0) materials.value = matRes.data.rows || []
-  if (whRes.code === 0) warehouses.value = whRes.data || []
-  if (locRes.code === 0) locations.value = locRes.data || []
+  warehouses.value = whRes || []
+  locations.value = locRes || []
 }
 
 async function loadData() {
@@ -181,11 +182,8 @@ async function loadData() {
       listInventories({ keyword: keyword.value.trim() || undefined, warehouseCode: warehouseFilter.value || undefined, locationCode: locationFilter.value || undefined, stockStatus: stockStatusFilter.value || undefined, status: statusFilter.value }),
       getInventoryStats(),
     ])
-    if (listRes.code !== 0) {
-      ElMessage.error(listRes.message || '加载库存失败')
-      return
-    }
-    rows.value = listRes.data || []
+    // listInventories 已由 unwrapList 解包成数组（失败抛异常）
+    rows.value = listRes || []
     const maxPage = Math.max(1, Math.ceil(rows.value.length / pageSize.value))
     if (page.value > maxPage) page.value = maxPage
     if (statsRes.code === 0) stats.value = statsRes.data

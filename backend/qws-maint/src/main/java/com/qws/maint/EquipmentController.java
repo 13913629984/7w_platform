@@ -1,6 +1,8 @@
 package com.qws.maint;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.maint.EquipmentDeleteRequest;
 import com.qws.common.dto.maint.EquipmentRequest;
@@ -59,6 +61,7 @@ public class EquipmentController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "MAINT", action = ActionType.CREATE, target = "设备")
     public ApiResult<EquipmentVO> create(@RequestBody EquipmentRequest request) {
         try {
             return ApiResult.ok(equipmentService.create(request));
@@ -68,6 +71,7 @@ public class EquipmentController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "MAINT", action = ActionType.UPDATE, target = "设备")
     public ApiResult<EquipmentVO> update(@RequestBody EquipmentRequest request) {
         try {
             return ApiResult.ok(equipmentService.update(request));
@@ -77,6 +81,7 @@ public class EquipmentController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "MAINT", action = ActionType.DELETE, target = "设备")
     public ApiResult<Void> delete(@RequestBody EquipmentDeleteRequest request) {
         try {
             equipmentService.delete(request == null ? null : request.getId());

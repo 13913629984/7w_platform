@@ -199,12 +199,9 @@ async function loadData() {
       listSuppliers({ keyword: keyword.value.trim() || undefined, category: categoryFilter.value || undefined, status: statusFilter.value }),
       getSupplierStats(),
     ])
-    if (listRes.code !== 0) {
-      ElMessage.error(listRes.message || '加载供应商失败')
-      return
-    }
+    // 列表接口已由 unwrapList 统一解包成数组（失败抛异常走 catch）
     if (statsRes.code === 0) stats.value = statsRes.data
-    rows.value = listRes.data || []
+    rows.value = listRes || []
     total.value = rows.value.length
     const maxPage = Math.max(1, Math.ceil(total.value / pageSize.value))
     if (page.value > maxPage) page.value = maxPage

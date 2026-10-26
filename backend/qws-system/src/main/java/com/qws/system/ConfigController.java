@@ -1,6 +1,8 @@
 package com.qws.system;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.config.ConfigDeleteRequest;
 import com.qws.common.dto.config.ConfigRequest;
@@ -43,6 +45,7 @@ public class ConfigController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "SYS", action = ActionType.CREATE, target = "系统参数")
     public ApiResult<ConfigVO> create(@RequestBody ConfigRequest request) {
         try {
             return ApiResult.ok(configService.create(request));
@@ -52,6 +55,7 @@ public class ConfigController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "SYS", action = ActionType.UPDATE, target = "系统参数")
     public ApiResult<ConfigVO> update(@RequestBody ConfigRequest request) {
         try {
             return ApiResult.ok(configService.update(request));
@@ -61,6 +65,7 @@ public class ConfigController {
     }
 
     @PostMapping("/batch-save")
+    @Audit(module = "SYS", action = ActionType.UPDATE, target = "系统参数")
     public ApiResult<Integer> batchSave(@RequestBody List<ConfigRequest> requests) {
         try {
             return ApiResult.ok(configService.batchSave(requests));
@@ -70,6 +75,7 @@ public class ConfigController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "SYS", action = ActionType.DELETE, target = "系统参数")
     public ApiResult<Void> delete(@RequestBody ConfigDeleteRequest request) {
         try {
             configService.delete(request);

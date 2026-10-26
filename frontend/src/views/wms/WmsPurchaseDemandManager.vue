@@ -187,11 +187,8 @@ async function loadData() {
       getDemandStats(),
       listTriggers(),
     ])
-    if (listRes.code !== 0) {
-      ElMessage.error(listRes.message || '加载采购需求失败')
-      return
-    }
-    demandList.value = listRes.data || []
+    // listDemands 已由 unwrapList 解包成数组（失败抛异常）
+    demandList.value = listRes || []
     const maxPage = Math.max(1, Math.ceil(demandList.value.length / pageSize.value))
     if (page.value > maxPage) page.value = maxPage
     if (statsRes.code === 0) stats.value = statsRes.data

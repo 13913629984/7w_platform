@@ -138,6 +138,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { downloadCsvFromRows } from '@/utils/export'
 import {
   listPayments,
   paymentStats,
@@ -287,7 +288,22 @@ async function handleReject(row: Payment) {
 }
 
 function handleExport() {
-  ElMessage.success('导出成功')
+  if (!payments.value.length) {
+    ElMessage.warning('暂无可导出的付款数据')
+    return
+  }
+  downloadCsvFromRows('付款单列表', [
+    { label: '付款单号', value: (r) => r.code },
+    { label: '付款类型', value: (r) => r.type },
+    { label: '关联AP单据', value: (r) => r.apCode || '' },
+    { label: '收款方', value: (r) => r.payee },
+    { label: '付款金额', value: (r) => Number(r.amount || 0).toFixed(2) },
+    { label: '付款方式', value: (r) => r.method },
+    { label: '申请日期', value: (r) => r.applyDate },
+    { label: '审批状态', value: (r) => r.status },
+    { label: '备注', value: (r) => r.remark || '' },
+  ], payments.value)
+  ElMessage.success('已导出当前页数据')
 }
 
 function handleRefresh() {

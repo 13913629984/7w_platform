@@ -1,6 +1,8 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.material.MaterialBatchDeleteRequest;
 import com.qws.common.dto.material.MaterialDeleteRequest;
@@ -53,6 +55,7 @@ public class MaterialController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "WMS", action = ActionType.CREATE, target = "物料")
     public ApiResult<MaterialVO> create(@RequestBody MaterialRequest request) {
         try {
             return ApiResult.ok(materialService.create(request));
@@ -62,6 +65,7 @@ public class MaterialController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "WMS", action = ActionType.UPDATE, target = "物料")
     public ApiResult<MaterialVO> update(@RequestBody MaterialRequest request) {
         try {
             return ApiResult.ok(materialService.update(request));
@@ -71,6 +75,7 @@ public class MaterialController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "WMS", action = ActionType.DELETE, target = "物料")
     public ApiResult<Void> delete(@RequestBody MaterialDeleteRequest request) {
         try {
             materialService.delete(request);
@@ -81,6 +86,7 @@ public class MaterialController {
     }
 
     @PostMapping("/batch-delete")
+    @Audit(module = "WMS", action = ActionType.DELETE, target = "物料")
     public ApiResult<Integer> batchDelete(@RequestBody MaterialBatchDeleteRequest request) {
         return ApiResult.ok(materialService.batchDelete(request));
     }

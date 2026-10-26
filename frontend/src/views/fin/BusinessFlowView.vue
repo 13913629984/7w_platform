@@ -82,28 +82,49 @@
     <div class="table-card">
       <div class="card-header expense-header">
         <div class="card-title">📋 单据关联明细表</div>
-        <el-button size="small" plain @click="handleExport">导出</el-button>
+        <el-space>
+          <el-input
+            v-model="relationKeyword"
+            size="small"
+            style="width: 200px"
+            clearable
+            placeholder="搜索单据号/客户/供应商"
+            @clear="loadRelations"
+            @keyup.enter="loadRelations"
+          />
+          <el-tag v-if="completeness.total" size="small" type="info" effect="plain">
+            共 {{ completeness.total }} 条 · 单据齐全 {{ completeness.complete }} 条 · 待补齐 {{ completeness.pending }} 条
+          </el-tag>
+          <el-button size="small" plain @click="loadRelations">查询</el-button>
+          <el-button size="small" plain @click="handleExport">导出</el-button>
+        </el-space>
       </div>
-      <el-table :data="relations" stripe style="width: 100%">
-        <el-table-column label="业务类型" width="120" align="center">
+      <el-table :data="relations" stripe style="width: 100%" empty-text="暂无关联单据（先在 CRM 建单或 WMS 建采购单）">
+        <el-table-column label="业务类型" width="110" align="center">
           <template #default="{ row }">
             <el-tag :type="row.bizType === '销售业务' ? 'success' : 'primary'" effect="light">{{ row.bizType }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="客户/供应商" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.partner || '-' }}</template>
+        </el-table-column>
         <el-table-column label="销售订单" min-width="150">
-          <template #default="{ row }"><el-button v-if="row.salesOrder !== '-'" link type="primary">{{ row.salesOrder }}</el-button><span v-else>-</span></template>
+          <template #default="{ row }"><span v-if="row.salesOrder !== '-'" class="doc-no">{{ row.salesOrder }}</span><span v-else>-</span></template>
         </el-table-column>
         <el-table-column label="采购订单" min-width="150">
-          <template #default="{ row }"><el-button v-if="row.purchaseOrder !== '-'" link type="primary">{{ row.purchaseOrder }}</el-button><span v-else>-</span></template>
+          <template #default="{ row }"><span v-if="row.purchaseOrder !== '-'" class="doc-no">{{ row.purchaseOrder }}</span><span v-else>-</span></template>
         </el-table-column>
-        <el-table-column label="出入库单" min-width="150">
-          <template #default="{ row }"><el-button v-if="row.stockDoc !== '-'" link type="primary">{{ row.stockDoc }}</el-button><span v-else>-</span></template>
+        <el-table-column label="出入库单" min-width="160">
+          <template #default="{ row }"><span v-if="row.stockDoc !== '-'" class="doc-no">{{ row.stockDoc }}</span><span v-else class="missing">-</span></template>
         </el-table-column>
         <el-table-column label="应收/应付" min-width="150">
-          <template #default="{ row }"><el-button v-if="row.arap !== '-'" link type="primary">{{ row.arap }}</el-button><span v-else>-</span></template>
+          <template #default="{ row }"><span v-if="row.arap !== '-'" class="doc-no">{{ row.arap }}</span><span v-else class="missing">-</span></template>
         </el-table-column>
-        <el-table-column label="付款/收款" min-width="150">
-          <template #default="{ row }"><el-button v-if="row.payment !== '-'" link type="primary">{{ row.payment }}</el-button><span v-else>-</span></template>
+        <el-table-column label="付款/收款" min-width="160">
+          <template #default="{ row }"><span v-if="row.payment !== '-'" class="doc-no">{{ row.payment }}</span><span v-else class="missing">-</span></template>
+        </el-table-column>
+        <el-table-column label="金额" width="130" align="right">
+          <template #default="{ row }">{{ formatAmount(row.amount) }}</template>
         </el-table-column>
         <el-table-column label="关联状态" width="110" align="center">
           <template #default="{ row }">
@@ -112,6 +133,30 @@
         </el-table-column>
       </el-table>
     </div>
+
+    <el-dialog v-model="detailVisible" title="单据流转与成本核算说明" width="640px">
+      <div class="tip-box" style="margin-bottom: 16px">
+        <div class="tip-title">两条主链</div>
+        <p>
+          <strong>销售链：</strong>CRM 商机 → 销售订单 → WMS 出库单（自动分配库位与库存）→ FIN 应收款（出库完成自动生成）→ 开票 → 回款核销 → 财务流水。<br />
+          <strong>采购链：</strong>采购需求 / MRP → 采购订单 → WMS 入库单 → FIN 应付款（入库完成自动生成）→ 发票匹配 → 付款 → 成本归集。
+        </p>
+      </div>
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="流水总数">{{ stats.total }} 笔</el-descriptions-item>
+        <el-descriptions-item label="已确认">{{ stats.confirmed }} 笔</el-descriptions-item>
+        <el-descriptions-item label="关联单据数">{{ completeness.total }} 条</el-descriptions-item>
+        <el-descriptions-item label="单据齐全">{{ completeness.complete }} 条</el-descriptions-item>
+        <el-descriptions-item label="收入合计">{{ formatWan(stats.income) }}</el-descriptions-item>
+        <el-descriptions-item label="支出合计">{{ formatWan(stats.expense) }}</el-descriptions-item>
+      </el-descriptions>
+      <div class="formula-grid" style="margin-top: 16px">
+        <div v-for="f in formulas" :key="f.title" class="formula-box" :class="f.color">
+          <div class="formula-title">{{ f.title }}</div>
+          <div class="formula-body">{{ f.body }}</div>
+        </div>
+      </div>
+    </el-dialog>
 
     <div class="card">
       <div class="card-header"><div class="card-title">📊 成本核算公式说明</div></div>
@@ -128,9 +173,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { businessFlowStats } from '@/api/fin/businessFlow'
+import { downloadCsvFromRows } from '@/utils/export'
+import {
+  businessFlowStats,
+  listBusinessRelations,
+  businessCompleteness,
+  type BusinessRelation,
+} from '@/api/fin/businessFlow'
 
 const stats = ref({ income: 0, expense: 0, total: 0, confirmed: 0, processing: 0 })
+/** 单据关联明细：来自 CRM/WMS/FIN 真实表，不再使用前端写死数据 */
+const relations = ref<BusinessRelation[]>([])
+const completeness = ref({ total: 0, complete: 0, pending: 0 })
+const relationKeyword = ref('')
 
 const statCards = computed(() => [
   { label: '财务流水总数', value: `${stats.value.total} 笔`, trend: '全部业务流水', color: 'blue' },
@@ -147,11 +202,33 @@ async function loadStats() {
   }
 }
 
-onMounted(loadStats)
+async function loadRelations() {
+  try {
+    const [rows, c] = await Promise.all([
+      listBusinessRelations({ keyword: relationKeyword.value || undefined }),
+      businessCompleteness({ keyword: relationKeyword.value || undefined }),
+    ])
+    relations.value = rows
+    completeness.value = c
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载关联明细失败')
+  }
+}
+
+async function loadAll() {
+  await Promise.all([loadStats(), loadRelations()])
+}
+
+onMounted(loadAll)
 
 function formatWan(value: number) {
   const wan = Number(value || 0) / 10000
   return `¥${wan.toFixed(1)}万`
+}
+
+function formatAmount(value: number | undefined) {
+  const n = Number(value || 0)
+  return `¥${n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 const salesFlow = [
@@ -192,14 +269,6 @@ const closureBoxes = [
   { title: '利润核算', tag: 'FIN报表', color: 'red' },
 ]
 
-const relations = [
-  { bizType: '销售业务', salesOrder: 'SO-2026-0528-001', purchaseOrder: '-', stockDoc: 'CK20260528001', arap: 'AR-2026-0528-001', payment: 'RCV-2026-0528-001', status: '已完成' },
-  { bizType: '销售业务', salesOrder: 'SO-2026-0527-002', purchaseOrder: '-', stockDoc: 'CK20260527001', arap: 'AR-2026-0527-002', payment: '-', status: '待回款' },
-  { bizType: '采购业务', salesOrder: '-', purchaseOrder: 'PO-2026-0528-001', stockDoc: 'RK20260528001', arap: 'AP-2026-0528-001', payment: 'PAY-2026-0528-001', status: '已完成' },
-  { bizType: '采购业务', salesOrder: '-', purchaseOrder: 'PO-2026-0527-002', stockDoc: 'RK20260527001', arap: 'AP-2026-0527-002', payment: '-', status: '待付款' },
-  { bizType: '采购业务', salesOrder: '-', purchaseOrder: 'PO-2026-0526-003', stockDoc: '-', arap: '-', payment: '-', status: '待入库' },
-]
-
 const formulas = [
   { title: '营业成本', body: '原材料成本 + 人工成本 + 制造费用 + 其他直接费用', color: 'blue' },
   { title: '毛利', body: '销售收入 - 营业成本', color: 'green' },
@@ -207,18 +276,37 @@ const formulas = [
 ]
 
 function statusTagType(status: string) {
-  if (status === '已完成') return 'success'
-  if (status === '待回款' || status === '待付款') return 'warning'
-  if (status === '待入库') return 'primary'
+  if (['已回款', '已完成', '已付款', '已入库', '已出库'].includes(status)) return 'success'
+  if (['待回款', '待付款', '待匹配', '待出库'].includes(status)) return 'warning'
+  if (['已发货', '入库中', '付款中', 'confirmed', 'inbound'].includes(status)) return 'primary'
+  if (status === 'cancelled' || status === '已取消') return 'info'
   return 'info'
 }
 
 function handleExport() {
-  ElMessage.success('导出成功')
+  if (!relations.value.length) {
+    ElMessage.warning('暂无可导出的关联明细')
+    return
+  }
+  downloadCsvFromRows('单据关联明细', [
+    { label: '业务类型', value: (r) => r.bizType },
+    { label: '销售订单', value: (r) => r.salesOrder },
+    { label: '采购订单', value: (r) => r.purchaseOrder },
+    { label: '出入库单', value: (r) => r.stockDoc },
+    { label: '应收/应付', value: (r) => r.arap },
+    { label: '付款/收款', value: (r) => r.payment },
+    { label: '客户/供应商', value: (r) => r.partner },
+    { label: '金额', value: (r) => Number(r.amount || 0).toFixed(2) },
+    { label: '日期', value: (r) => r.date },
+    { label: '关联状态', value: (r) => r.status },
+  ], relations.value)
+  ElMessage.success('已导出关联明细')
 }
 
+const detailVisible = ref(false)
+
 function handleDetail() {
-  ElMessage.info('查看详细说明')
+  detailVisible.value = true
 }
 </script>
 
@@ -238,6 +326,8 @@ function handleDetail() {
 .flow-box.blue .flow-box-tag { color: #409eff; }
 .flow-box.red { background: #fef0f0; border-color: #fab6b6; }
 .flow-box.red .flow-box-tag { color: #f56c6c; }
+.doc-no { font-family: var(--el-font-family-mono, monospace); font-size: 12px; color: var(--el-color-primary); }
+.missing { color: var(--el-text-color-placeholder); }
 
 .tip-box { background: #fdf6ec; border: 1px solid #f5dab1; border-radius: 10px; padding: 16px 18px; margin-bottom: 24px; }
 .tip-title { font-weight: 600; color: #e6a23c; margin-bottom: 10px; }

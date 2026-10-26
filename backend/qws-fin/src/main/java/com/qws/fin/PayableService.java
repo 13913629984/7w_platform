@@ -47,12 +47,13 @@ public class PayableService {
     }
 
     public List<Map<String, Object>> pendingReceipts() {
-        // 待匹配发票：未匹配且状态为待匹配的应付单据，作为收货待匹配清单展示
+        // 待匹配发票：未匹配的应付单据。返回 id 以便前端直接发起「发票匹配」。
         return payableMapper.selectList(new LambdaQueryWrapper<FinPayable>()
                         .eq(FinPayable::getMatched, 0)
                         .orderByDesc(FinPayable::getCreateTime)).stream()
                 .map(p -> {
                     Map<String, Object> result = new HashMap<>();
+                    result.put("id", p.getId());
                     result.put("code", p.getReceiptCode());
                     result.put("purchaseOrder", p.getPurchaseOrder());
                     result.put("supplier", p.getSupplier());

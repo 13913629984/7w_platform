@@ -1,6 +1,8 @@
 package com.qws.wms;
 
 import com.qws.common.ApiResult;
+import com.qws.common.audit.ActionType;
+import com.qws.common.audit.Audit;
 import com.qws.common.security.RequirePermission;
 import com.qws.common.dto.brand.BrandDeleteRequest;
 import com.qws.common.dto.brand.BrandRequest;
@@ -49,6 +51,7 @@ public class BrandController {
     }
 
     @PostMapping("/create")
+    @Audit(module = "WMS", action = ActionType.CREATE, target = "品牌")
     public ApiResult<BrandVO> create(@RequestBody BrandRequest request) {
         try {
             return ApiResult.ok(brandService.create(request));
@@ -58,6 +61,7 @@ public class BrandController {
     }
 
     @PostMapping("/update")
+    @Audit(module = "WMS", action = ActionType.UPDATE, target = "品牌")
     public ApiResult<BrandVO> update(@RequestBody BrandRequest request) {
         try {
             return ApiResult.ok(brandService.update(request));
@@ -67,6 +71,7 @@ public class BrandController {
     }
 
     @PostMapping("/delete")
+    @Audit(module = "WMS", action = ActionType.DELETE, target = "品牌")
     public ApiResult<Void> delete(@RequestBody BrandDeleteRequest request) {
         try {
             brandService.delete(request.getId());

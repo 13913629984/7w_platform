@@ -145,6 +145,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { downloadCsvFromRows } from '@/utils/export'
 import { getArap, type ArapReceivable, type ArapPayable } from '@/api/fin/arap'
 
 const activeTab = ref<'ar' | 'ap'>('ar')
@@ -237,7 +238,38 @@ function apTagType(status: string) {
 }
 
 function handleExport() {
-  ElMessage.success('导出成功')
+  if (activeTab.value === 'ar') {
+    if (!receivables.value.length) {
+      ElMessage.warning('暂无可导出的应收数据')
+      return
+    }
+    downloadCsvFromRows('应收应付-应收', [
+      { label: '单据号', value: (r) => r.code },
+      { label: '客户', value: (r) => r.customer },
+      { label: '销售订单', value: (r) => r.salesOrder },
+      { label: '合同金额', value: (r) => Number(r.contractAmount || 0).toFixed(2) },
+      { label: '已收款', value: (r) => Number(r.received || 0).toFixed(2) },
+      { label: '待收款', value: (r) => Number(r.pending || 0).toFixed(2) },
+      { label: '到期日', value: (r) => r.dueDate },
+      { label: '状态', value: (r) => r.status },
+    ], receivables.value)
+  } else {
+    if (!payables.value.length) {
+      ElMessage.warning('暂无可导出的应付数据')
+      return
+    }
+    downloadCsvFromRows('应收应付-应付', [
+      { label: '单据号', value: (r) => r.code },
+      { label: '供应商', value: (r) => r.supplier },
+      { label: '采购订单', value: (r) => r.purchaseOrder || '' },
+      { label: '应付金额', value: (r) => Number(r.payableAmount || 0).toFixed(2) },
+      { label: '已付款', value: (r) => Number(r.paid || 0).toFixed(2) },
+      { label: '待付款', value: (r) => Number(r.pending || 0).toFixed(2) },
+      { label: '到期日', value: (r) => r.dueDate },
+      { label: '状态', value: (r) => r.status },
+    ], payables.value)
+  }
+  ElMessage.success('已导出当前页数据')
 }
 </script>
 

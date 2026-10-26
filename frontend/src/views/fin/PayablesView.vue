@@ -45,7 +45,7 @@
           <template #default="{ row }"><span class="danger">{{ formatMoney(row.payable) }}</span></template>
         </el-table-column>
         <el-table-column label="操作" width="120" align="center">
-          <template #default><el-button size="small" type="primary" @click="handleGenerateAp">生成AP</el-button></template>
+          <template #default="{ row }"><el-button size="small" type="primary" @click="handleGenerateAp(row)">发票匹配</el-button></template>
         </el-table-column>
       </el-table>
     </div>
@@ -108,17 +108,47 @@
         />
       </div>
     </div>
+
+    <el-dialog v-model="createVisible" title="新增应付款" width="580px" :close-on-click-modal="false">
+      <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="104px">
+        <el-form-item label="供应商" prop="supplier">
+          <el-input v-model="createForm.supplier" maxlength="160" placeholder="请输入供应商名称" />
+        </el-form-item>
+        <el-form-item label="采购订单号">
+          <el-input v-model="createForm.purchaseOrder" maxlength="80" />
+        </el-form-item>
+        <el-form-item label="入库单号">
+          <el-input v-model="createForm.receiptCode" maxlength="80" />
+        </el-form-item>
+        <el-form-item label="采购金额" prop="purchaseAmount">
+          <el-input-number v-model="createForm.purchaseAmount" :min="0" :step="1000" :precision="2" controls-position="right" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="税额">
+          <el-input-number v-model="createForm.tax" :min="0" :step="100" :precision="2" controls-position="right" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="到期日">
+          <el-date-picker v-model="createForm.dueDate" type="date" value-format="YYYY-MM-DD" placeholder="选择到期日" style="width: 100%" />
+        </el-form-item>
+        <div class="form-tip">应付金额 = 采购金额 + 税额，由后端自动计算。</div>
+      </el-form>
+      <template #footer>
+        <el-button @click="createVisible = false">取消</el-button>
+        <el-button type="primary" :loading="createSubmitting" @click="submitCreate">确定创建</el-button>
+      </template>
+    </el-dialog>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { downloadCsvFromRows } from '@/utils/export'
 import {
   listPayables,
   listPendingReceipts,
   payableStats,
   matchPayable,
+  createPayable,
   type Payable,
   type PendingReceipt,
 } from '@/api/fin/payable'
@@ -204,23 +234,109 @@ async function handleMatch(row: Payable) {
 }
 
 function handleAutoGenerate() {
-  ElMessage.info('请在采购入库后自动生成AP')
+  ElMessage.info('采购入库完成后系统已自动生成应付单；下表为待匹配发票的入库单')
 }
+
 function handleExport() {
-  ElMessage.success('导出成功')
+  if (!payables.value.length) {
+    ElMessage.warning('暂无可导出的应付款数据')
+    return
+  }
+  downloadCsvFromRows('应付款列表', [
+    { label: '单据号', value: (r) => r.code },
+    { label: '入库单号', value: (r) => r.receiptCode || '' },
+    { label: '供应商', value: (r) => r.supplier },
+    { label: '采购订单', value: (r) => r.purchaseOrder || '' },
+    { label: '采购金额', value: (r) => Number(r.purchaseAmount || 0).toFixed(2) },
+    { label: '税额', value: (r) => Number(r.tax || 0).toFixed(2) },
+    { label: '应付金额', value: (r) => Number(r.payable || 0).toFixed(2) },
+    { label: '已付', value: (r) => Number(r.paid || 0).toFixed(2) },
+    { label: '待付', value: (r) => Number(r.pending || 0).toFixed(2) },
+    { label: '发票匹配', value: (r) => (r.matched ? '已匹配' : '未匹配') },
+    { label: '到期日', value: (r) => r.dueDate },
+    { label: '状态', value: (r) => r.status },
+  ], payables.value)
+  ElMessage.success('已导出当前页数据')
 }
+
 function handleRefresh() {
   loadAll()
   ElMessage.success('已刷新')
 }
+
+/* ---------------- 新增应付款 / 发票匹配 ---------------- */
+const createVisible = ref(false)
+const createFormRef = ref<FormInstance>()
+const createSubmitting = ref(false)
+const createForm = reactive({
+  supplier: '',
+  purchaseOrder: '',
+  receiptCode: '',
+  purchaseAmount: 0,
+  tax: 0,
+  dueDate: '',
+})
+const createRules: FormRules = {
+  supplier: [{ required: true, message: '请填写供应商', trigger: 'blur' }],
+  purchaseAmount: [{ required: true, message: '请填写采购金额', trigger: 'blur' }],
+}
+
 function handleCreate() {
-  ElMessage.info('新增应付款')
+  Object.assign(createForm, {
+    supplier: '', purchaseOrder: '', receiptCode: '', purchaseAmount: 0, tax: 0, dueDate: '',
+  })
+  createVisible.value = true
 }
+
+async function submitCreate() {
+  if (!createFormRef.value) return
+  const valid = await createFormRef.value.validate().catch(() => false)
+  if (!valid) return
+  if (!(Number(createForm.purchaseAmount) > 0)) {
+    ElMessage.warning('采购金额必须大于 0')
+    return
+  }
+  createSubmitting.value = true
+  try {
+    await createPayable({
+      supplier: createForm.supplier.trim(),
+      purchaseOrder: createForm.purchaseOrder.trim(),
+      receiptCode: createForm.receiptCode.trim(),
+      purchaseAmount: Number(createForm.purchaseAmount),
+      tax: Number(createForm.tax || 0),
+      dueDate: createForm.dueDate,
+    })
+    ElMessage.success('应付款已创建')
+    createVisible.value = false
+    await loadAll()
+  } catch (e: any) {
+    ElMessage.error(e.message || '创建失败')
+  } finally {
+    createSubmitting.value = false
+  }
+}
+
+/** 对「待生成应付款的入库单」行发起发票匹配 */
+async function handleGenerateAp(row: PendingReceipt) {
+  if (!row.id) {
+    ElMessage.warning('该记录缺少应付单 ID，请刷新后重试')
+    return
+  }
+  try {
+    await matchPayable(row.id)
+    ElMessage.success('发票匹配成功')
+    await loadAll()
+  } catch (e: any) {
+    ElMessage.error(e.message || '匹配失败')
+  }
+}
+
 function handleBatchGenerate() {
-  ElMessage.info('批量生成AP')
-}
-function handleGenerateAp() {
-  ElMessage.info('生成AP')
+  if (!pendingReceipts.value.length) {
+    ElMessage.warning('暂无待匹配的应付单')
+    return
+  }
+  ElMessage.info(`共 ${pendingReceipts.value.length} 笔待匹配，请在下方列表逐笔点击「发票匹配」`)
 }
 </script>
 
@@ -228,4 +344,5 @@ function handleGenerateAp() {
 .pending-card { margin-bottom: 24px; }
 .pending-card .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .pagination-bar { display: flex; justify-content: flex-end; margin-top: 16px; }
+.form-tip { margin-left: 104px; font-size: 12px; color: var(--el-text-color-secondary); line-height: 1.6; }
 </style>
