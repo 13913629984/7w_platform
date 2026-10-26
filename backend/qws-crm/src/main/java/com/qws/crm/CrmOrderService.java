@@ -411,20 +411,6 @@ public class CrmOrderService {
         return prefix + String.format("%03d", seq);
     }
 
-    /** 默认出库仓库：优先成品仓，否则取首个启用仓库（仅在无库存参考时使用） */
-    private String defaultWarehouseCode() {
-        List<Warehouse> warehouses = warehouseMapper.selectList(new LambdaQueryWrapper<Warehouse>()
-                .eq(Warehouse::getStatus, 1));
-        if (warehouses.isEmpty()) {
-            return "WH-FG";
-        }
-        return warehouses.stream()
-                .filter(w -> "finished".equals(w.getType()))
-                .map(Warehouse::getCode)
-                .findFirst()
-                .orElse(warehouses.get(0).getCode());
-    }
-
     /** 按产品编码/名称匹配 WMS 物料，匹配不到直接报错（不再拿首个物料兜底） */
     private Material resolveMaterial(CrmOrderItem item) {
         if (StringUtils.hasText(item.getProductCode())) {

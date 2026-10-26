@@ -1,6 +1,7 @@
 package com.qws.wms;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
@@ -56,6 +57,7 @@ public class InventoryDataInitializer {
         if (count == null || count > 0) {
             return;
         }
+        @NonNull
         Map<String, Long> materials = jdbcTemplate.query("SELECT id, sku FROM wms_material", rs -> {
             java.util.Map<String, Long> map = new java.util.HashMap<>();
             while (rs.next()) map.put(rs.getString("sku"), rs.getLong("id"));

@@ -4,7 +4,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Component
