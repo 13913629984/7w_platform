@@ -25,7 +25,8 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     private final boolean requireSignature;
 
     public WebSecurityConfig(
-            @Value("${qws.security.secret:qws-platform-internal-signing-key-2026}") String secret,
+            // 开发环境默认值；生产环境必须通过环境变量 QWS_INTERNAL_SECRET 覆盖
+            @Value("${qws.security.secret:${QWS_INTERNAL_SECRET:qws-platform-internal-signing-key-2026}}") String secret,
             @Value("${qws.security.require-signature:true}") boolean requireSignature) {
         this.secret = secret;
         this.requireSignature = requireSignature;

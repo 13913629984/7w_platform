@@ -10,9 +10,9 @@ spring:
         namespace: QWS
         group: QWS_GROUP
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/7wsys?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
-    username: root
-    password:
+    url: ${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/7wsys?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
 mybatis-plus:
   configuration:

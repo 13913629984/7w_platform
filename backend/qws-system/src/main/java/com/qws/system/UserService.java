@@ -20,6 +20,7 @@ import com.qws.common.mapper.SysRoleMapper;
 import com.qws.common.mapper.SysUserRoleMapper;
 import com.qws.common.mapper.SysUserMapper;
 import com.qws.common.util.PasswordUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -43,13 +44,17 @@ public class UserService {
     private final SysDepartmentMapper sysDepartmentMapper;
     private final SysRoleMapper sysRoleMapper;
     private final SysUserRoleMapper sysUserRoleMapper;
+    /** 未指定密码时的兜底值，开发默认 123456；生产通过环境变量 QWS_DEFAULT_USER_PASSWORD 覆盖 */
+    private final String defaultPassword;
 
-    public UserService(SysUserMapper sysUserMapper, SysEmployeeMapper sysEmployeeMapper, SysDepartmentMapper sysDepartmentMapper, SysRoleMapper sysRoleMapper, SysUserRoleMapper sysUserRoleMapper) {
+    public UserService(SysUserMapper sysUserMapper, SysEmployeeMapper sysEmployeeMapper, SysDepartmentMapper sysDepartmentMapper, SysRoleMapper sysRoleMapper, SysUserRoleMapper sysUserRoleMapper,
+                       @Value("${qws.security.default-user-password:${QWS_DEFAULT_USER_PASSWORD:123456}}") String defaultPassword) {
         this.sysUserMapper = sysUserMapper;
         this.sysEmployeeMapper = sysEmployeeMapper;
         this.sysDepartmentMapper = sysDepartmentMapper;
         this.sysRoleMapper = sysRoleMapper;
         this.sysUserRoleMapper = sysUserRoleMapper;
+        this.defaultPassword = defaultPassword;
     }
 
     public UserListResult list(String keyword, String status, int page, int pageSize) {
@@ -93,7 +98,7 @@ public class UserService {
         SysUser user = new SysUser();
         user.setUsername(request.getUsername());
         user.setPassword(PasswordUtil.hash(
-                StringUtils.hasText(request.getPassword()) ? request.getPassword() : "123456"
+                StringUtils.hasText(request.getPassword()) ? request.getPassword() : defaultPassword
         ));
         user.setNickname(StringUtils.hasText(request.getNickname()) ? request.getNickname() : request.getUsername());
         user.setEmail(request.getEmail());
@@ -222,7 +227,7 @@ public class UserService {
             }
             SysUser user = new SysUser();
             user.setUsername(employee.getEmployeeNo());
-            user.setPassword(PasswordUtil.hash("123456"));
+            user.setPassword(PasswordUtil.hash(defaultPassword));
             user.setNickname(employee.getName());
             user.setEmail(employee.getEmail());
             user.setPhone(employee.getPhone());

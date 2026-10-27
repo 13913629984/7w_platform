@@ -51,14 +51,22 @@ $proc = Start-Process @startArgs
 # Wait until the service reports healthy.
 # 只探端口不够：Tomcat 会先绑定端口、再完成 Spring 上下文初始化，
 # 这中间前端打过来的请求会 502/500。改用 /actuator/health 才算真正就绪。
+# 注意（踩过的坑）：PowerShell 5.1 对 actuator 返回的
+# application/vnd.spring-boot.actuator.v3+json 这类"未知 +json"类型不会按文本解码，
+# $resp.Content 会退化成 byte[]，于是 $resp.Content -match '"UP"' 恒为假，
+# 服务其实 9s 就 Ready 了，脚本却白等满 90s 才放行 —— 这是"一个服务要 1 分多钟"的真正原因。
+# 现在统一先转成字符串再判断，并把轮询间隔降到 500ms，就绪即放行。
 $up = $false
-for ($i = 0; $i -lt 90; $i++) {
-    Start-Sleep -Seconds 1
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+for ($i = 0; $i -lt 180; $i++) {
+    Start-Sleep -Milliseconds 500
     try {
         $resp = Invoke-WebRequest -Uri "http://localhost:$Port/actuator/health" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
-        if ($resp.StatusCode -eq 200 -and $resp.Content -match '"UP"') {
+        $body = $resp.Content
+        if ($body -is [byte[]]) { $body = [System.Text.Encoding]::UTF8.GetString($body) }
+        if ($resp.StatusCode -eq 200 -and $body -match '"UP"') {
             $up = $true
-            Write-Host "[READY] $service is healthy (after ~${i}s, PID=$($proc.Id))" -ForegroundColor Green
+            Write-Host ("[READY] {0} is healthy (after ~{1}s, PID={2})" -f $service, [math]::Round($sw.Elapsed.TotalSeconds, 1), $proc.Id) -ForegroundColor Green
             break
         }
     } catch {
@@ -72,6 +80,6 @@ for ($i = 0; $i -lt 90; $i++) {
     }
 }
 if (-not $up) {
-    Write-Host "[WARN] $service did not open port $Port in 60s. Tail of ${logOut}:" -ForegroundColor Red
+    Write-Host "[WARN] $service did not become healthy on port $Port in 90s. Tail of ${logOut}:" -ForegroundColor Red
     Get-Content $logOut -Tail 30
 }

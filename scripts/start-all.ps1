@@ -2,7 +2,10 @@
 param(
     [switch]$SkipNacos,
     [switch]$SkipFrontend,
-    [int]$TimeoutSeconds = 90
+    # 默认并行启动：每个服务自身约 7~10s，串行 8 个就是 80s+，并行只受最慢的那个约束。
+    # 需要看清晰顺序日志时用 -Serial。
+    [switch]$Serial,
+    [int]$TimeoutSeconds = 120
 )
 
 $ErrorActionPreference = 'Stop'
@@ -124,8 +127,75 @@ $services = @(
     @{ Name = 'qws-gateway'; Port = 8080; Script = 'start-gateway.ps1' }
 )
 
-foreach ($service in $services) {
-    $results[$service.Name] = Start-QwsBundledService -Name $service.Name -Port $service.Port -ScriptFile $service.Script
+# /actuator/health 才是真就绪（端口开 ≠ Spring ready）。
+# 注意：PowerShell 5.1 对 application/vnd.spring-boot.actuator.v3+json 不解码成文本，
+# $resp.Content 会是 byte[]，必须先转字符串再匹配，否则永远判不健康（历史 bug）。
+function Test-QwsHealthy {
+    param([int]$Port)
+    try {
+        $resp = Invoke-WebRequest -Uri ("http://localhost:{0}/actuator/health" -f $Port) -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+        $body = $resp.Content
+        if ($body -is [byte[]]) { $body = [System.Text.Encoding]::UTF8.GetString($body) }
+        return ($resp.StatusCode -eq 200 -and $body -match '"UP"')
+    } catch {
+        return $false
+    }
+}
+
+function Start-QwsServicesParallel {
+    param($ServiceList)
+
+    $pending = @()
+    foreach ($s in $ServiceList) {
+        if (Test-QwsPort -Port $s.Port) {
+            Write-Host ("[SKIP] {0} already listening on port {1}" -f $s.Name, $s.Port) -ForegroundColor Yellow
+            $results[$s.Name] = $true
+            continue
+        }
+        $scriptPath = Join-Path $ScriptRoot $s.Script
+        if (-not (Test-Path -LiteralPath $scriptPath)) {
+            Write-Host ("[ERROR] Missing script: {0}" -f $scriptPath) -ForegroundColor Red
+            $results[$s.Name] = $false
+            continue
+        }
+        $outLog = Join-Path $LogRoot ("start-{0}.out.log" -f $s.Name)
+        $errLog = Join-Path $LogRoot ("start-{0}.err.log" -f $s.Name)
+        $null = Start-QwsBackgroundProcess -FilePath 'powershell.exe' -Arguments @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $scriptPath) -WorkingDirectory $PlatformRoot -StdOut $outLog -StdErr $errLog
+        Write-Host ("[START] {0} on port {1}" -f $s.Name, $s.Port) -ForegroundColor Cyan
+        $pending += [pscustomobject]@{ Name = $s.Name; Port = $s.Port; Log = $outLog }
+    }
+
+    if (@($pending).Count -eq 0) { return }
+
+    Write-Host ("[WAIT] {0} service(s) starting in parallel" -f @($pending).Count) -ForegroundColor DarkGray
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while (@($pending).Count -gt 0 -and (Get-Date) -lt $deadline) {
+        foreach ($p in @($pending)) {
+            if (Test-QwsHealthy -Port $p.Port) {
+                Write-Host ("[READY] {0} is healthy on port {1} (t+{2}s)" -f $p.Name, $p.Port, [math]::Round($sw.Elapsed.TotalSeconds, 1)) -ForegroundColor Green
+                $results[$p.Name] = $true
+                $pending = @($pending | Where-Object { $_.Name -ne $p.Name })
+            }
+        }
+        if (@($pending).Count -gt 0) { Start-Sleep -Milliseconds 500 }
+    }
+
+    foreach ($p in @($pending)) {
+        Write-Host ("[ERROR] {0} not healthy on port {1} within {2}s" -f $p.Name, $p.Port, $TimeoutSeconds) -ForegroundColor Red
+        if (Test-Path -LiteralPath $p.Log) {
+            Get-Content -LiteralPath $p.Log -Tail 15 | ForEach-Object { Write-Host ("        " + $_) -ForegroundColor DarkGray }
+        }
+        $results[$p.Name] = $false
+    }
+}
+
+if ($Serial) {
+    foreach ($service in $services) {
+        $results[$service.Name] = Start-QwsBundledService -Name $service.Name -Port $service.Port -ScriptFile $service.Script
+    }
+} else {
+    Start-QwsServicesParallel -ServiceList $services
 }
 
 # Vite dev server on port 4000.

@@ -14,9 +14,9 @@ spring:
       mode: always
       schema-locations: classpath:schema.sql
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/7wsys?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
-    username: root
-    password:
+    url: ${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/7wsys?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
 mybatis-plus:
   configuration:
@@ -25,7 +25,7 @@ mybatis-plus:
     db-config:
       id-type: auto
 jwt:
-  secret: qws-platform-secret-key-for-jwt-demo-2026
+  secret: ${JWT_SECRET:qws-platform-secret-key-for-jwt-demo-2026}
 
 # 认证服务是网关之前的入口（/auth/login 在网关白名单内，不带内部签名），
 # 因此本服务不做内部签名校验，由网关对其它服务的调用负责。

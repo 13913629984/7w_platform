@@ -48,9 +48,12 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     private final List<String> whitelist;
     private final String internalSecret;
 
+    // 开发环境默认值；生产环境必须通过环境变量 QWS_INTERNAL_SECRET 覆盖
+    public static final String DEFAULT_INTERNAL_SECRET = "${qws.security.secret:${QWS_INTERNAL_SECRET:qws-platform-internal-signing-key-2026}}";
+
     public JwtAuthFilter(@Value("${jwt.secret}") String secret,
                          @Value("${jwt.whitelist:/api/auth/login}") String whitelist,
-                         @Value("${qws.security.secret:qws-platform-internal-signing-key-2026}") String internalSecret) {
+                         @Value(DEFAULT_INTERNAL_SECRET) String internalSecret) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.whitelist = Arrays.stream(whitelist.split(","))
                 .map(String::trim)
