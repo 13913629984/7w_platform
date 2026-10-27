@@ -105,6 +105,40 @@ npm run dev
 - `/api/crm/**`
 - `/api/wms/**`
 
+## 常见环境问题
+
+### git 推送失败（`Connection was reset` / `Could not connect to server`），但浏览器能打开 GitHub
+
+**根因**：浏览器会自动读 Windows 系统代理，而 **git 不读系统代理**，会直连
+`github.com:443`。国内网络下直连往往握手能过、但一传大流量就被重置，
+所以 `git ls-remote`（小请求）常常正常，而 `git push` 几乎必定约 20s 后失败。
+
+判断方法：
+
+```bash
+# 直连测试，卡住/超时说明被阻断
+git ls-remote https://github.com/<owner>/<repo>.git
+# 与浏览器一致地走本机代理试试（端口换成你自己的代理端口）
+git -c http.proxy=http://127.0.0.1:17890 ls-remote https://github.com/<owner>/<repo>.git
+```
+
+若代理方式能通，配置**仅对 github.com 生效**的代理（不影响内网 git 仓库）：
+
+```bash
+git config --global http.https://github.com.proxy http://127.0.0.1:17890
+```
+
+取消该配置 / 临时绕过：
+
+```bash
+git config --global --unset http.https://github.com.proxy
+git -c http.https://github.com.proxy= push
+```
+
+> 注意用 `http.https://github.com.proxy` 这种 host 限定的 key，
+> **不要**用全局 `http.proxy`，否则会连带把公司的内网 Git 仓库（如 `120.26.39.189:8099`）
+> 也发往代理，导致那些仓库反而推不上去。
+
 ## 下一步建议
 
 1. 接入 MySQL，并为系统用户、角色、菜单、客户、物料、库存等建立真实表结构。
